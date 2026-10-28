@@ -3,9 +3,8 @@ import pandas as pd
 from datetime import datetime
 import os
 
-st.set_page_config(page_title="UNIK BEC-UNASNM Official Portal", page_icon="🏛️", layout="wide")
+st.set_page_config(page_title="UNIK - University of Kisubi Portal", page_icon="🏛️", layout="wide")
 
-# --- FIX WHITE BOX = BLACK TEXT ---
 st.markdown("""
 <style>
 .report-card {background-color: #E3F2FD; padding: 20px; border-radius: 10px; border-left: 5px solid #1565C0; margin-bottom: 15px;}
@@ -14,15 +13,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- CORRECT 13 OFFICES - FINAL LIST ---
 USERS = {
-    "principal": {"name": "Principal, Bukalasa Nursing School", "role": "Principal - Nursing School", "password": "unik2025"},
+    "principal": {"name": "Principal, School of Nursing & Midwifery", "role": "Principal - UNIK University of Kisubi", "password": "unik2025"},
     "patron": {"name": "Patron UNASNM", "role": "Patron UNASNM", "password": "unik2025"},
     "president": {"name": "President BEC", "role": "President BEC", "password": "unik2025"},
-    "speaker": {"name": "Hon. Lawrence Ssango - Speaker BEC", "role": "Speaker BEC", "password": "unik2025"},
+    "speaker": {"name": "Hon. Lawrence Ssango - Speaker BEC", "role": "Speaker BEC - Office of the Speaker", "password": "unik2025"},
     "finance": {"name": "Finance Secretary BEC", "role": "Finance BEC", "password": "unik2025"},
     "general_secretary": {"name": "General Secretary BEC", "role": "General Secretary BEC", "password": "unik2025"},
-    "information": {"name": "Information Ministry", "role": "Information BEC", "password": "unik2025"},
+    "information": {"name": "Information Ministry BEC", "role": "Information BEC", "password": "unik2025"},
     "class_rep": {"name": "Class Representatives", "role": "Class Representatives", "password": "unik2025"},
     "grc_male": {"name": "GRC Male / Galaxy Male", "role": "GRC Male", "password": "unik2025"},
     "grc_female": {"name": "GRC Female / Galaxy Female", "role": "GRC Female", "password": "unik2025"},
@@ -61,15 +59,15 @@ if "logged_in" not in st.session_state:
     st.session_state.username = ""
 
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center; color:#1565C0;'>🏛️ UNIK BEC-UNASNM OFFICIAL GOVERNANCE PORTAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;'><b>Bukalasa Nursing School - Office of the Speaker</b><br>Secure Department Access System</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center; color:#1565C0;'>🏛️ UNIK - UNIVERSITY OF KISUBI</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;'><b>School of Nursing and Midwifery<br>BEC-UNASNM Official Governance Portal<br>Office of the Speaker - Hon. Lawrence Ssango</b><br>Secure Department Access System</p>", unsafe_allow_html=True)
     st.markdown("---")
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.subheader("🔐 Department Login")
         username = st.text_input("Username").lower().strip()
         password = st.text_input("Password", type="password")
-        st.info("Usernames: principal, patron, president, speaker, finance, general_secretary, information, class_rep, grc_male, grc_female, hostel_male, hostel_female, nursing_affairs | Password: unik2025")
+        st.info("13 Offices: principal, patron, president, speaker, finance, general_secretary, information, class_rep, grc_male, grc_female, hostel_male, hostel_female, nursing_affairs | Password: unik2025")
         if st.button("Login to Portal", use_container_width=True, type="primary"):
             if username in USERS and password == USERS[username]["password"]:
                 st.session_state.logged_in = True
