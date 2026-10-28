@@ -1,184 +1,128 @@
 import streamlit as st
 import pandas as pd
-import datetime
+from datetime import datetime
 import os
 
-st.set_page_config(page_title="UNIK BEC-UNASNM GOVERNANCE PORTAL", layout="wide", page_icon="🏛️")
+st.set_page_config(page_title="UNIK BEC-UNASNM Official Portal", page_icon="🏛️", layout="wide")
 
+# --- FIX WHITE BOX = BLACK TEXT ---
 st.markdown("""
 <style>
-    .report-card {
-        background-color: #E8F4FF;
-        padding: 20px;
-        border-radius: 12px;
-        border-left: 6px solid #0A4A7A;
-        margin-bottom: 15px;
-    }
-    .report-card * {
-        color: #000000 !important;
-    }
-    .report-content {
-        background-color: #FFFFFF;
-        color: #000000 !important;
-        padding: 18px;
-        border-radius: 8px;
-        border: 1px solid #cccccc;
-        white-space: pre-wrap;
-        font-size: 16px;
-        line-height: 1.6;
-    }
+.report-card {background-color: #E3F2FD; padding: 20px; border-radius: 10px; border-left: 5px solid #1565C0; margin-bottom: 15px;}
+.report-inner {background-color: white !important; padding: 15px; border-radius: 8px; color: black !important; border: 1px solid #90CAF9;}
+.report-inner p {color: black !important; font-size: 16px !important;}
 </style>
 """, unsafe_allow_html=True)
 
-DATA_FILE = "reports.csv"
-
+# --- CORRECT 13 OFFICES - FINAL LIST ---
 USERS = {
-    "speaker": {"password": "unik2025", "dept": "Office of the Speaker", "role": "Speaker", "access": "all"},
-    "president": {"password": "unik2025", "dept": "Office of the President", "role": "President", "access": "all"},
-    "patron": {"password": "unik2025", "dept": "Office of the Patron", "role": "Patron", "access": "all"},
-    "principal": {"password": "unik2025", "dept": "Office of the Principal", "role": "Principal", "access": "all"},
-    "general_secretary": {"password": "unik2025", "dept": "Office of the General Secretary", "role": "General Secretary", "access": "all"},
-    "finance": {"password": "unik2025", "dept": "Finance Department", "role": "Finance", "access": "own"},
-    "nursing": {"password": "unik2025", "dept": "Nursing Affairs", "role": "Nursing Affairs", "access": "own"},
-    "info": {"password": "unik2025", "dept": "Information Department", "role": "Information", "access": "own"},
-    "hostel_boys": {"password": "unik2025", "dept": "Boys Hostel", "role": "Hostel Leader Boys", "access": "own"},
-    "hostel_girls": {"password": "unik2025", "dept": "Girls Hostel", "role": "Hostel Leader Girls", "access": "own"},
-    "class_rep": {"password": "unik2025", "dept": "Class Representatives", "role": "Class Representative", "access": "own"},
-    "grc_male": {"password": "unik2025", "dept": "GRC Male", "role": "GRC Male", "access": "own"},
-    "grc_female": {"password": "unik2025", "dept": "GRC Female", "role": "GRC Female", "access": "own"},
+    "principal": {"name": "Principal, Bukalasa Nursing School", "role": "Principal - Nursing School", "password": "unik2025"},
+    "patron": {"name": "Patron UNASNM", "role": "Patron UNASNM", "password": "unik2025"},
+    "president": {"name": "President BEC", "role": "President BEC", "password": "unik2025"},
+    "speaker": {"name": "Hon. Lawrence Ssango - Speaker BEC", "role": "Speaker BEC", "password": "unik2025"},
+    "finance": {"name": "Finance Secretary BEC", "role": "Finance BEC", "password": "unik2025"},
+    "general_secretary": {"name": "General Secretary BEC", "role": "General Secretary BEC", "password": "unik2025"},
+    "information": {"name": "Information Ministry", "role": "Information BEC", "password": "unik2025"},
+    "class_rep": {"name": "Class Representatives", "role": "Class Representatives", "password": "unik2025"},
+    "grc_male": {"name": "GRC Male / Galaxy Male", "role": "GRC Male", "password": "unik2025"},
+    "grc_female": {"name": "GRC Female / Galaxy Female", "role": "GRC Female", "password": "unik2025"},
+    "hostel_male": {"name": "Male Hostel Representative", "role": "Hostel Rep Male", "password": "unik2025"},
+    "hostel_female": {"name": "Female Hostel Representative", "role": "Hostel Rep Female", "password": "unik2025"},
+    "nursing_affairs": {"name": "Nursing Affairs / Non-Resident", "role": "Nursing Affairs", "password": "unik2025"},
 }
 
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["date","time","dept","role","report_type","title","content","status","submitted_by"])
+DATA_FILE = "unik_reports_permanent.csv"
+
+def load_reports():
+    if os.path.exists(DATA_FILE):
+        try:
+            return pd.read_csv(DATA_FILE)
+        except:
+            return pd.DataFrame(columns=["timestamp", "username", "department", "title", "report"])
+    else:
+        df = pd.DataFrame(columns=["timestamp", "username", "department", "title", "report"])
         df.to_csv(DATA_FILE, index=False)
         return df
-    return pd.read_csv(DATA_FILE)
 
-def save_report(dept, role, report_type, title, content, submitted_by):
-    df = load_data()
-    now = datetime.datetime.now()
+def save_report(username, title, report_text):
+    df = load_reports()
     new_row = {
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M:%S"),
-        "dept": dept,
-        "role": role,
-        "report_type": report_type,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "username": username,
+        "department": USERS[username]["role"],
         "title": title,
-        "content": content,
-        "status": "Pending",
-        "submitted_by": submitted_by
+        "report": report_text
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_csv(DATA_FILE, index=False)
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+    st.session_state.username = ""
 
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center; color:#0A4A7A;'>🏛️ UNIK BEC-UNASNM<br>OFFICIAL GOVERNANCE PORTAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;'>Office of the Speaker | Hon. Lawrence Ssango<br>Secure Department Access System</p>", unsafe_allow_html=True)
-    st.divider()
+    st.markdown("<h1 style='text-align:center; color:#1565C0;'>🏛️ UNIK BEC-UNASNM OFFICIAL GOVERNANCE PORTAL</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;'><b>Bukalasa Nursing School - Office of the Speaker</b><br>Secure Department Access System</p>", unsafe_allow_html=True)
+    st.markdown("---")
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.subheader("🔐 Department Login")
         username = st.text_input("Username").lower().strip()
         password = st.text_input("Password", type="password")
+        st.info("Usernames: principal, patron, president, speaker, finance, general_secretary, information, class_rep, grc_male, grc_female, hostel_male, hostel_female, nursing_affairs | Password: unik2025")
         if st.button("Login to Portal", use_container_width=True, type="primary"):
-            if username in USERS and USERS[username]["password"] == password:
+            if username in USERS and password == USERS[username]["password"]:
                 st.session_state.logged_in = True
                 st.session_state.username = username
-                st.session_state.dept = USERS[username]["dept"]
-                st.session_state.role = USERS[username]["role"]
-                st.session_state.access = USERS[username]["access"]
                 st.rerun()
             else:
-                st.error("Invalid username or password!")
-    st.stop()
-
-st.sidebar.markdown(f"### 🏛️ UNIK BEC-UNASNM\n**{st.session_state.dept}**\nRole: {st.session_state.role}")
-st.sidebar.divider()
-menu = st.sidebar.radio("Navigation", ["Dashboard", "Submit Report", "Letter Generator", "Archive"])
-st.sidebar.divider()
-if st.sidebar.button("Logout"):
-    st.session_state.logged_in = False
-    st.rerun()
-
-st.markdown(f"## 🏛️ {st.session_state.dept} Portal")
-st.markdown(f"**Role:** {st.session_state.role} | **Date:** {datetime.date.today().strftime('%d/%m/%Y')} | **Access:** {'All Departments' if st.session_state.access=='all' else 'Own Department Only'}")
-st.divider()
-
-df = load_data()
-if st.session_state.access == "own":
-    df_view = df[df["dept"] == st.session_state.dept]
+                st.error("❌ Wrong username or password!")
 else:
-    df_view = df
-
-if menu == "Dashboard":
-    c1,c2,c3,c4 = st.columns(4)
-    c1.metric("Total Reports", len(df_view))
-    c2.metric("Pending", len(df_view[df_view["status"]=="Pending"]) if not df_view.empty else 0)
-    c3.metric("Finance Reports", len(df[df["dept"]=="Finance Department"]))
-    c4.metric("Hostel Reports", len(df[df["dept"].str.contains("Hostel", na=False)]))
-    st.subheader("📋 Recent Reports")
-    if df_view.empty:
-        st.info("No reports submitted yet. Go to Submit Report to create your first report.")
+    user = USERS[st.session_state.username]
+    with st.sidebar:
+        st.success(f"Logged as: {user['name']}")
+        st.caption(f"Role: {user['role']}")
+        if st.button("Logout"):
+            st.session_state.logged_in = False
+            st.session_state.username = ""
+            st.rerun()
+    is_admin = st.session_state.username in ["principal", "patron", "president", "speaker", "general_secretary"]
+    if is_admin:
+        st.title(f"📊 Dashboard - {user['name']}")
+        tab1, tab2 = st.tabs(["📄 View All Reports", "✍️ Submit Report"])
+        df = load_reports()
+        with tab1:
+            if df.empty:
+                st.warning("No reports submitted yet.")
+            else:
+                titles = ["All Reports"] + sorted(df["title"].unique().tolist())
+                selected = st.selectbox("Select report title to read", titles)
+                display_df = df if selected == "All Reports" else df[df["title"] == selected]
+                for idx, row in display_df.sort_values(by="timestamp", ascending=False).iterrows():
+                    st.markdown(f"""<div class="report-card"><h4 style="color:#0D47A1; margin:0;">{row['title']} - {row['department']}</h4><small style="color:#555;">{row['timestamp']} | By: {row['username']}</small><div class="report-inner"><p>{row['report']}</p></div></div>""", unsafe_allow_html=True)
+                st.download_button("📥 Download All Reports CSV", df.to_csv(index=False).encode('utf-8'), "unik_reports.csv")
+        with tab2:
+            t = st.text_input("Report Title")
+            r = st.text_area("Report Content", height=250)
+            if st.button("Submit Report", type="primary"):
+                if t and r:
+                    save_report(st.session_state.username, t, r)
+                    st.success("✅ Report submitted permanently!")
+                    st.rerun()
     else:
-        st.dataframe(df_view.sort_values(by=["date","time"], ascending=False), use_container_width=True)
-        st.subheader("📖 Read Report Details")
-        titles = df_view["title"].tolist()[::-1]
-        selected = st.selectbox("Select report title to read", titles)
-        if selected:
-            row = df_view[df_view["title"]==selected].iloc[-1]
-            st.markdown(f"""
-            <div class="report-card">
-                <h4 style="margin:0;">{row['title']}</h4>
-                <p><b>Department:</b> {row['dept']} | <b>Role:</b> {row['role']} | <b>Date:</b> {row['date']} {row['time']} | <b>Type:</b> {row['report_type']} | <b>Status:</b> {row['status']}</p>
-                <div class="report-content">{row['content']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-elif menu == "Submit Report":
-    st.subheader("📝 Submit Official Report")
-    report_type = st.selectbox("Report Type", ["Weekly Report","Financial Report","Hostel Report","Nursing Report","GRC Report","Class Report","Incident Report","Other"])
-    title = st.text_input("Report Title")
-    content = st.text_area("Report Content - Detailed Explanation", height=250, placeholder="Write full report here...")
-    if st.button("📤 Submit Report to Speaker & President", type="primary"):
-        if title and content:
-            save_report(st.session_state.dept, st.session_state.role, report_type, title, content, st.session_state.username)
-            st.success(f"Report '{title}' submitted successfully!")
-            st.balloons()
-        else:
-            st.warning("Please fill Title and Content!")
-
-elif menu == "Letter Generator":
-    st.subheader("✉️ Official Letter Generator")
-    to = st.text_input("To (e.g., Dean, Principal)")
-    subject = st.text_input("Subject / RE:")
-    body = st.text_area("Letter Body", height=250)
-    if st.button("Generate Letter"):
-        if to and subject and body:
-            letter = f"""
-UNIK BEC-UNASNM - OFFICE OF THE {st.session_state.role.upper()}
-BWEYOGERE CAMPUS
-Date: {datetime.date.today().strftime('%d %B %Y')}
-To: {to}
-RE: {subject}
-Dear Sir/Madam,
-{body}
-Yours faithfully,
-______________________________
-{st.session_state.role}
-{st.session_state.dept}
-"""
-            st.text_area("Generated Letter - Copy and Print", letter, height=350)
-        else:
-            st.warning("Fill all fields!")
-
-elif menu == "Archive":
-    st.subheader("📁 Archive - All Records")
-    if df_view.empty:
-        st.info("Archive is empty.")
-    else:
-        st.download_button("📥 Download CSV Backup", df_view.to_csv(index=False), file_name=f"unik_bec_archive_{datetime.date.today()}.csv", mime="text/csv")
-        st.dataframe(df_view, use_container_width=True)
+        st.title(f"✍️ {user['name']}")
+        st.subheader("Submit Weekly Report")
+        t = st.text_input("Report Title")
+        r = st.text_area("Detailed Report", height=300)
+        if st.button("Submit Report Permanently", type="primary", use_container_width=True):
+            if t and r:
+                save_report(st.session_state.username, t, r)
+                st.success("✅ Report submitted! Speaker & Principal can now see it.")
+                st.balloons()
+        df = load_reports()
+        my_reports = df[df["username"] == st.session_state.username]
+        if not my_reports.empty:
+            st.markdown("---")
+            st.subheader("My Previous Reports")
+            for idx, row in my_reports.sort_values(by="timestamp", ascending=False).iterrows():
+                st.markdown(f"""<div class="report-card"><h4 style="color:#0D47A1;">{row['title']}</h4><small>{row['timestamp']}</small><div class="report-inner"><p>{row['report']}</p></div></div>""", unsafe_allow_html=True)
