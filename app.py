@@ -86,7 +86,7 @@ if 'user' not in st.session_state: st.session_state.user=""
 
 if is_public_vote:
     st.markdown("<h3 style='text-align:center;'>🏛️ UNIK BEC UNASNM - PUBLIC ELECTORAL COMMISSION</h3>", unsafe_allow_html=True)
-    st.info("Public Link: ?public=vote - No Cabinet Secrets - One Email Once Per Position - Works For Years")
+    st.info("Public Link ?public=vote - No Secrets - One Email Once Per Position - Works For Years")
     t1,t2,t3,t4 = st.tabs(["Apply Candidate","Vote One Email Once","Live Results","Public Info from SUPER 4"])
     with t1:
         rp=st.selectbox("Position You Want",ELECTION_POSITIONS,format_func=lambda x:USERS[x],key="pub_pos")
@@ -177,7 +177,7 @@ st.sidebar.divider()
 if user in SUPER_4:
     st.sidebar.info("SUPER 4: You control Broadcast + ALL Reports + Online Meetings!")
 else:
-    st.sidebar.info(f"You are {user_full} - Can read + join meetings - ALL 13 see same Media & Documents!")
+    st.sidebar.info(f"You are {user_full} - Can read + join meetings")
 if st.sidebar.button("Logout", use_container_width=True): st.session_state.logged_in=False; st.rerun()
 
 tab0,tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11 = st.tabs([
@@ -218,7 +218,7 @@ with tab0:
                 anns.append({"id":len(anns)+1,"title":at.strip(),"category":acat,"priority":ap,"content":acont.strip(),"file_name":fname,"file_path":fpath,"from":user,"from_name":user_full,"date":datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),"read_by":[],"is_public":is_pub})
                 save_json(ANNOUNCEMENTS_FILE, anns)
                 st.session_state.announcements=anns
-                st.success(f"Broadcasted! ALL 13 see + {'Public also see' if is_pub else 'Internal only'}"); st.balloons(); st.rerun()
+                st.success("Broadcasted!"); st.balloons(); st.rerun()
     else:
         st.info(f"You are {user_full} - You can READ announcements from SUPER 4 - Only Principal, Patron, President, Speaker can broadcast")
     st.divider()
@@ -252,7 +252,7 @@ with tab1:
             <p><b>Meeting ID:</b> {meeting_id}</p>
             <p><b>Your Name:</b> {user_full}</p>
             <a href="https://meet.jit.si/{meeting_id}" target="_blank" style="background:#25D366; color:white; padding:12px 25px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">
-                JOIN MEETING NOW - Audio + Video - Click to open
+                JOIN MEETING NOW - Audio + Video
             </a>
         </div>
         """, unsafe_allow_html=True)
@@ -454,14 +454,14 @@ with tab8:
             st.write(d['description'])
 
 with tab9:
-    st.subheader("Documents - PDF, PowerPoint, Word, Excel - FOR ALL 13 - EVERYONE CAN UPLOAD & SEE!")
-    st.success("FIXED: ALL 13 Departments can upload! ALL 13 see same list! No hiding! Saved for years!")
+    st.subheader("Documents - PDF, PowerPoint, Word, Excel - OPEN TO ALL 13 - EVERYONE CAN UPLOAD & SEE SAME!")
+    st.success("OPEN ACCESS: ALL 13 can upload! ALL 13 see same list! No hiding! Saved for years!")
     docs=load_json(UPLOADED_DOCS_FILE, st.session_state.uploaded_docs)
     st.session_state.uploaded_docs=docs
     dcat=st.selectbox("Category",DOC_CATEGORIES,key="doc_cat")
     dt=st.text_input("Title *",key="doc_t", placeholder="e.g. Budget 2026, Constitution")
     dd=st.text_area("Description",key="doc_d")
-    df=st.file_uploader("Upload File * PDF / PPT / Word / Excel - ANY of 13 can upload - EVERYONE SEES!",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv"],key="doc_f")
+    df=st.file_uploader("Upload File * PDF / PPT / Word / Excel - ANY of 13 can upload - EVERYONE SEES SAME!",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv"],key="doc_f")
     if st.button("Upload Document - Visible to ALL 13 - EVERYONE SEES SAME!",type="primary",use_container_width=True,key="doc_s"):
         if not dt.strip() or not df: st.error("Title + File required!")
         else:
@@ -484,8 +484,8 @@ with tab9:
                 st.download_button(f"Download {doc['file_name']} - ALL 13 can download!", open(doc['file_path'],'rb').read(), file_name=doc['file_name'], key=f"dl_doc_{doc['id']}", type="primary", use_container_width=True)
 
 with tab10:
-    st.subheader("Media Gallery - ALL SEE - FIXED! EVERYONE POSTS, EVERYONE SEES SAME!")
-    st.success("FIXED: ALL 13 Departments can post! ALL 13 see same gallery! No hiding! If you post, everyone sees!")
+    st.subheader("Media Gallery - OPEN TO ALL 13 - EVERYONE POSTS, EVERYONE SEES SAME!")
+    st.success("OPEN ACCESS FIXED: ALL 13 Departments can post! ALL 13 see same gallery! If you post, everyone sees! No hiding!")
     med=load_json(MEDIA_FILE, st.session_state.media)
     st.session_state.media=med
     st.write(f"Total Media Visible to ALL 13: {len(med)} - Everyone sees same!")
@@ -507,27 +507,28 @@ with tab10:
                 if "image" in m['file_type']: st.image(m['file_path'],use_container_width=True)
                 elif "video" in m['file_type']: st.video(m['file_path'])
                 elif "audio" in m['file_type']: st.audio(m['file_path'])
-            else:
-                st.warning(f"File path missing but record exists: {m['file_name']}")
 
 with tab11:
-    st.subheader("Cabinet Archive - For Years")
+    st.subheader("Cabinet Archive - For Years - OPEN TO ALL 13 - EVERYONE CAN OPEN AND POST!")
+    st.success("OPEN ACCESS FIXED: ALL 13 can open, post cabinet for years, everyone sees same! No restriction!")
     cabs=load_json(CABINETS_FILE, st.session_state.cabinets)
     st.session_state.cabinets=cabs
+    st.write(f"Total Cabinets Saved For Years: {len(cabs)} - Visible to ALL 13!")
     cy=st.text_input("Year *",key="cab_y")
     cn=st.text_input("Cabinet Name * (e.g. First BEC 2026)",key="cab_n")
     cm=st.text_area("Members *",key="cab_m")
     cp=st.file_uploader("Cabinet Photo *",type=["jpg","png","jpeg"],key="cab_p")
-    if st.button("Save Cabinet - For Future Years",type="primary",use_container_width=True,key="cab_s"):
+    if st.button("Save Cabinet - For Future Years - Visible to ALL 13!",type="primary",use_container_width=True,key="cab_s"):
         if not cy or not cn or not cm or not cp: st.error("All fields required!")
         else:
             fpath=f"data/media_files/cab_{len(cabs)+1}.jpg"
             with open(fpath,'wb') as out: out.write(cp.getvalue())
             cabs.append({"id":len(cabs)+1,"year":cy.strip(),"name":cn.strip(),"members":cm.strip(),"photo_path":fpath,"by":user_full,"date":datetime.datetime.now().strftime("%Y-%m-%d")})
             save_json(CABINETS_FILE, cabs)
-            st.success("Saved for years!"); st.rerun()
+            st.success("Saved for years! NOW ALL 13 CAN SEE!"); st.rerun()
+    st.divider()
     for cab in reversed(cabs):
         with st.container(border=True):
-            st.markdown(f"**{cab['name']} - {cab['year']}** - {cab['by']}")
+            st.markdown(f"**{cab['name']} - {cab['year']}** - Posted by {cab['by']} - Visible to ALL 13!")
             if os.path.exists(cab['photo_path']): st.image(cab['photo_path'],use_container_width=True)
             st.info(cab['members'])
