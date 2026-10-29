@@ -4,7 +4,7 @@ import datetime
 import os, json
 st.set_page_config(page_title="UNIK BEC UNASNM Governance Portal", page_icon="🏛️", layout="wide")
 
-# ===== SAVE ON SERVER FOR YEARS =====
+# SAVE ON SERVER FOR YEARS
 os.makedirs("data/media_files", exist_ok=True)
 os.makedirs("data/documents", exist_ok=True)
 REPORTS_FILE="data/reports.json"
@@ -28,14 +28,14 @@ def load_json(path, default):
             with open(path,'r') as f: return json.load(f)
         except: return default
     return default
+
 def save_json(path, data):
     with open(path,'w') as f: json.dump(data, f, default=str)
 
-# ===== PUBLIC VOTING PARAM =====
 params = st.query_params
 is_public_vote = params.get("public", "") == "vote"
 
-# ===== ONLY ONE HEADING - UNIK BEC UNASNM Governance Portal - FIXED =====
+# ONLY ONE HEADING - UNIK BEC UNASNM Governance Portal
 c1,c2,c3 = st.columns([1,3,1])
 with c1:
     if os.path.exists("unik_badge.png"): st.image("unik_badge.png", width=90)
@@ -67,7 +67,6 @@ ELECTION_POSITIONS=["president","vice_president","speaker","finance","general_se
 REPORT_TYPES=["Weekly","Monthly","Financial","Activity","GRC","Hostel","Class","Electoral","Disciplinary","GP","Other"]
 DOC_CATEGORIES=["Constitution","Budget","Minutes","Finance Excel","Finance PPT","Other Secret","PDF Documents","Excel Sheets","PowerPoint","Public Information","Meeting Minutes"]
 
-# ===== INIT ALL - STABLE =====
 if 'reports' not in st.session_state: st.session_state.reports=load_json(REPORTS_FILE, [])
 if 'media' not in st.session_state: st.session_state.media=load_json(MEDIA_FILE, [])
 if 'candidates' not in st.session_state: st.session_state.candidates=load_json(CANDIDATES_FILE, [])
@@ -87,11 +86,10 @@ if 'passwords' not in st.session_state:
 if 'logged_in' not in st.session_state: st.session_state.logged_in=False
 if 'user' not in st.session_state: st.session_state.user=""
 
-# ===== PUBLIC VOTING - NO SECRETS - ONE EMAIL ONCE PER POSITION - WORKS FOR YEARS =====
 if is_public_vote:
     st.markdown("<h3 style='text-align:center;'>🏛️ UNIK BEC UNASNM - PUBLIC ELECTORAL COMMISSION</h3>", unsafe_allow_html=True)
-    st.info("Public Link: ?public=vote - No Cabinet Secrets - One Email Once Per Position - Works For Years")
-    t1,t2,t3,t4 = st.tabs(["📝 Apply Candidate","🗳️ Vote One Email Once","📊 Live Results","📢 Public Info from SUPER 4"])
+    st.info("Public Link ?public=vote - No Secrets - One Email Once Per Position - Works For Years")
+    t1,t2,t3,t4 = st.tabs(["Apply Candidate","Vote One Email Once","Live Results","Public Info from SUPER 4"])
     with t1:
         rp=st.selectbox("Position You Want",ELECTION_POSITIONS,format_func=lambda x:USERS[x],key="pub_pos")
         rn=st.text_input("Full Names *",key="pub_name")
@@ -117,10 +115,10 @@ if is_public_vote:
             else:
                 for c in [x for x in st.session_state.candidates if x['position']==vp]:
                     with st.container(border=True):
-                        if os.path.exists(c.get('photo_path','')): st.image(c['photo_path'],width=150)
+                        if os.path.exists(c.get('photo_path','')): st.image(c.get('photo_path',''),width=150)
                         st.write(f"**{c['name']}** - {c.get('class','')}")
                         st.info(c.get('reason',''))
-                        if st.button(f"✅ Vote {c['name']}",key=f"pv_{c['id']}_{voter_email}", type="primary"):
+                        if st.button(f"Vote {c['name']}",key=f"pv_{c['id']}_{voter_email}", type="primary"):
                             st.session_state.votes.append({"candidate_id":c['id'],"voter_email":voter_email,"position":vp,"date":datetime.datetime.now().strftime("%Y-%m-%d %H:%M")})
                             save_json(VOTES_FILE, st.session_state.votes)
                             st.success("Voted!"); st.balloons(); st.rerun()
@@ -133,7 +131,7 @@ if is_public_vote:
                 if sum([x['Votes'] for x in rd])>0:
                     st.write(f"**{USERS[pos]}**"); st.dataframe(pd.DataFrame(rd),use_container_width=True)
     with t4:
-        st.subheader("📢 Public Information from SUPER 4")
+        st.subheader("Public Information from SUPER 4")
         all_anns=load_json(ANNOUNCEMENTS_FILE, [])
         pub_anns=[a for a in all_anns if a.get('is_public')]
         if not pub_anns: st.warning("No public info yet from SUPER 4")
@@ -145,9 +143,8 @@ if is_public_vote:
                     st.download_button(f"Download {ann['file_name']}", open(ann['file_path'],'rb').read(), file_name=ann['file_name'], key=f"dl_pub_{ann['id']}")
     st.stop()
 
-# ===== CABINET LOGIN - 13 ONLY =====
 if not st.session_state.logged_in:
-    st.markdown("### 🔐 Cabinet Login - 13 Departments Only - Secrets Inside")
+    st.markdown("### Cabinet Login - 13 Departments Only - Secrets Inside")
     u=st.selectbox("Select Your Office - 13 Departments",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
     p=st.text_input("Password",type="password",key="pass")
     if st.button("LOGIN TO GOVERNANCE PORTAL",type="primary", use_container_width=True):
@@ -160,11 +157,10 @@ if not st.session_state.logged_in:
 user=st.session_state.user
 user_full=USERS[user]
 
-# ===== SIDEBAR - PASSWORD CHANGE ALL 13 + MEETING CONTROL =====
 st.sidebar.title(user_full)
 st.sidebar.success(f"Logged: {user_full}")
 st.sidebar.divider()
-st.sidebar.subheader("🔐 Change My Password - My Bottle")
+st.sidebar.subheader("Change My Password - My Bottle")
 with st.sidebar.expander("Change My Own Password - Every Member Can!", expanded=False):
     cur=st.text_input("Current Password *",type="password",key="cur_pw")
     new=st.text_input("New Password *",type="password",key="new_pw")
@@ -186,12 +182,11 @@ else:
     st.sidebar.info(f"You are {user_full} - Can read + join meetings")
 if st.sidebar.button("Logout", use_container_width=True): st.session_state.logged_in=False; st.rerun()
 
-# ===== TABS - ALL 12 TABS - EVERYTHING =====
 tab0,tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11 = st.tabs([
 "📢 Public Portal SUPER 4 Broadcast",
 "🎥 Online Meeting Audio/Video",
 "📝 Submit Report",
-"📂 Private Portal Principal Sees All",
+"📂 Private Portal",
 "🗳️ Electoral Chair Full",
 "⚖️ Disciplinary",
 "📋 GP VP Leader",
@@ -202,9 +197,8 @@ tab0,tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11 = st.tabs([
 "🏛️ Cabinet Archive For Years"
 ])
 
-# TAB 0 - PUBLIC PORTAL - SUPER 4 BROADCAST TO ALL 13
 with tab0:
-    st.subheader("📢 Public Portal - SUPER 4 sends ONE message to ALL 13 + Public Info")
+    st.subheader("Public Portal - SUPER 4 sends ONE message to ALL 13 + Public Info")
     anns=load_json(ANNOUNCEMENTS_FILE, st.session_state.announcements)
     st.session_state.announcements=anns
     if anns: st.success(f"{len(anns)} Announcements from SUPER 4")
@@ -213,9 +207,9 @@ with tab0:
         at=st.text_input("Title *",key="ann_t", placeholder="Meeting Tomorrow 9am All Must Attend")
         acat=st.selectbox("Where to show?",["Internal - All 13 Only","Public Information - Also Show to Students in ?public=vote","Both Internal + Public"],key="ann_cat")
         ap=st.selectbox("Priority",["Normal","Urgent","Very Urgent - All Must Read"],key="ann_p")
-        acont=st.text_area("Message to ALL 13 Departments *",key="ann_c",height=150, placeholder="Dear All 13 Departments... For public students: Dear Students...")
+        acont=st.text_area("Message to ALL 13 Departments *",key="ann_c",height=150)
         af=st.file_uploader("Attach PDF/Excel/PPT/Word/Photo (Optional)",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","jpeg"],key="ann_f")
-        if st.button("📢 BROADCAST TO ALL 13 + PUBLIC OPTION",type="primary",use_container_width=True,key="ann_btn"):
+        if st.button("BROADCAST TO ALL 13 + PUBLIC OPTION",type="primary",use_container_width=True,key="ann_btn"):
             if not at.strip() or not acont.strip(): st.error("Title + Message required!")
             else:
                 fpath=""; fname=""
@@ -229,7 +223,7 @@ with tab0:
                 st.session_state.announcements=anns
                 st.success(f"Broadcasted! ALL 13 see + {'Public students also see' if is_pub else 'Internal only'}"); st.balloons(); st.rerun()
     else:
-        st.info(f"You are {user_full} - You can READ announcements from SUPER 4 - Only Principal, Patron, His Excellency President, Right Honourable Speaker can broadcast")
+        st.info(f"You are {user_full} - You can READ announcements from SUPER 4")
     st.divider()
     for ann in reversed(anns):
         pub_tag="🌐 PUBLIC" if ann.get('is_public') else "🔒 INTERNAL"
@@ -238,66 +232,54 @@ with tab0:
             st.markdown(f"{pri_icon} {pub_tag} **{ann['title']}** | {ann['priority']} | {ann['from_name']} | {ann['date']}")
             st.info(ann['content'])
             if ann.get('file_path','') and os.path.exists(ann['file_path']):
-                st.download_button(f"📥 Download {ann['file_name']}", open(ann['file_path'],'rb').read(), file_name=ann['file_name'], key=f"dl_ann_{ann['id']}")
+                st.download_button(f"Download {ann['file_name']}", open(ann['file_path'],'rb').read(), file_name=ann['file_name'], key=f"dl_ann_{ann['id']}")
             if user not in ann.get('read_by',[]):
-                if st.button("✅ Mark as Read",key=f"read_{ann['id']}"):
+                if st.button("Mark as Read",key=f"read_{ann['id']}"):
                     for a in anns:
                         if a['id']==ann['id'] and user not in a['read_by']: a['read_by'].append(user)
                     save_json(ANNOUNCEMENTS_FILE, anns); st.rerun()
-            else: st.caption(f"✅ Read - {len(ann.get('read_by',[]))}/13 read")
+            else: st.caption(f"Read - {len(ann.get('read_by',[]))}/13 read")
 
-# TAB 1 - ONLINE MEETING AUDIO/VIDEO - CONTROLLED BY SUPER 4 - NEW
 with tab1:
-    st.subheader("🎥 Online Meeting - Audio & Video Calls - Controlled by SUPER 4")
-    st.info("SUPER 4 (Principal, Patron, His Excellency President, Right Honourable Speaker) creates meeting - ALL 13 join - Audio + Video + Chat + Screen Share!")
+    st.subheader("Online Meeting - Audio & Video Calls - Controlled by SUPER 4")
+    st.info("SUPER 4 creates meeting - ALL 13 join - Audio + Video + Chat + Screen Share!")
     meetings=load_json(MEETINGS_FILE, st.session_state.meetings)
     st.session_state.meetings=meetings
-    
-    # Active meeting
     active_meetings=[m for m in meetings if m.get('is_active')]
     if active_meetings:
         am=active_meetings[-1]
-        st.success(f"🔴 LIVE NOW: {am['title']} | Created by {am['from_name']} | {am['date']}")
+        st.success(f"LIVE NOW: {am['title']} | Created by {am['from_name']} | {am['date']}")
         st.warning(f"Topic: {am['topic']}")
-        # JOIN BUTTON
         meeting_id = am['meeting_id']
-        # Jitsi embedded
-        st.markdown(f"### Join Meeting: {am['title']}")
         st.markdown(f"""
         <div style="background:#f0f0f0; padding:15px; border-radius:10px; margin:10px 0;">
             <p><b>Meeting ID:</b> {meeting_id}</p>
-            <p><b>Your Name will be:</b> {user_full}</p>
+            <p><b>Your Name:</b> {user_full}</p>
             <a href="https://meet.jit.si/{meeting_id}" target="_blank" style="background:#25D366; color:white; padding:12px 25px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">
-                🎥 JOIN MEETING NOW - Click to open in new tab (Audio + Video)
+                JOIN MEETING NOW - Click to open in new tab (Audio + Video)
             </a>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Embedded Jitsi
         jitsi_html = f"""
         <iframe src="https://meet.jit.si/{meeting_id}#userInfo.displayName='{user_full}'" 
         style="width:100%; height:600px; border:0; border-radius:10px;" allow="camera; microphone; fullscreen; display-capture"></iframe>
-        <p style="text-align:center; font-size:12px; color:#666;">If video doesn't load, click JOIN button above to open in new tab - Works on phone!</p>
         """
         st.components.v1.html(jitsi_html, height=650)
-        
         if user in SUPER_4:
-            if st.button("🔴 END MEETING FOR ALL", type="primary", key="end_meeting"):
+            if st.button("END MEETING FOR ALL", type="primary", key="end_meeting"):
                 for m in meetings:
                     if m['meeting_id']==meeting_id: m['is_active']=False; m['ended_by']=user_full; m['ended_date']=datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
                 save_json(MEETINGS_FILE, meetings)
                 st.success("Meeting ended for all 13"); st.rerun()
     else:
         st.warning("No active meeting now - SUPER 4 will start when needed")
-    
     st.divider()
     if user in SUPER_4:
-        st.markdown(f"### 🎬 Create New Online Meeting as {user_full} - SUPER 4 Only")
-        st.info("You control meetings - Create → ALL 13 get notification to join - You can end meeting for all!")
-        m_title=st.text_input("Meeting Title * (e.g. Emergency Cabinet Meeting)", key="m_title")
-        m_topic=st.text_area("Meeting Topic / Agenda *", key="m_topic", placeholder="Agenda: Budget discussion, Election, etc.")
+        st.markdown(f"### Create New Online Meeting as {user_full} - SUPER 4 Only")
+        m_title=st.text_input("Meeting Title *", key="m_title")
+        m_topic=st.text_area("Meeting Topic / Agenda *", key="m_topic")
         m_type=st.selectbox("Meeting Type", ["Audio + Video - All 13 can see each other","Audio Only - Voice meeting","Emergency - Very Urgent"], key="m_type")
-        if st.button("🎥 START MEETING NOW - ALL 13 CAN JOIN", type="primary", use_container_width=True, key="start_meeting"):
+        if st.button("START MEETING NOW - ALL 13 CAN JOIN", type="primary", use_container_width=True, key="start_meeting"):
             if not m_title.strip() or not m_topic.strip(): st.error("Title + Topic required!")
             else:
                 meeting_id = f"UNIK-BEC-{datetime.datetime.now().strftime('%Y%m%d-%H%M')}-{m_title.replace(' ','')[:10]}"
@@ -315,24 +297,17 @@ with tab1:
                 })
                 save_json(MEETINGS_FILE, meetings)
                 st.session_state.meetings=meetings
-                st.success(f"Meeting '{m_title}' started! Meeting ID: {meeting_id} - ALL 13 can now join!"); st.balloons(); st.rerun()
-    
+                st.success(f"Meeting '{m_title}' started! ID: {meeting_id} - ALL 13 can now join!"); st.balloons(); st.rerun()
     st.divider()
-    st.subheader("📋 Past Meetings - Archive for Years")
+    st.subheader("Past Meetings - Archive for Years")
     for m in reversed(meetings):
-        status="🔴 LIVE NOW" if m.get('is_active') else "✅ Ended"
+        status="LIVE NOW" if m.get('is_active') else "Ended"
         with st.container(border=True):
             st.markdown(f"{status} **{m['title']}** | {m['type']} | by {m['from_name']} | {m['date']} | ID: {m['meeting_id']}")
             st.caption(f"Topic: {m['topic']}")
-            if m.get('is_active'):
-                st.markdown(f"[Join https://meet.jit.si/{m['meeting_id']}](https://meet.jit.si/{m['meeting_id']})")
-            if m.get('ended_by'): st.write(f"Ended by {m['ended_by']} at {m.get('ended_date','')}")
 
-# TAB 2 - SUBMIT REPORT
-with tab1:
-    pass
 with tab2:
-    st.subheader("📝 Submit Report - Where Principal Looks")
+    st.subheader("Submit Report - Where Principal Looks")
     rt=st.selectbox("Report Type",REPORT_TYPES,key="rt")
     rtitle=st.text_input("Report Title *",key="rtitle", placeholder="Weekly Report - Class Rep")
     rcontent=st.text_area("Details *",key="rcontent", height=150)
@@ -341,10 +316,10 @@ with tab2:
         else:
             st.session_state.reports.append({"id":len(st.session_state.reports)+1,"date":datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip()})
             save_json(REPORTS_FILE, st.session_state.reports)
-            st.success("Saved - Principal, Patron, President, Speaker will see!"); st.balloons(); st.rerun()
+            st.success("Saved - Principal will see!"); st.balloons(); st.rerun()
 
 with tab3:
-    st.subheader("📂 Private Portal - Reports - Principal Looks Here")
+    st.subheader("Private Portal - Reports - Principal Looks Here")
     reports=load_json(REPORTS_FILE, st.session_state.reports)
     show=reports if user in SUPER_4 else [r for r in reports if r['from']==user]
     st.write(f"Reports: {len(show)}")
@@ -353,41 +328,44 @@ with tab3:
             st.info(r['content'])
 
 with tab4:
-    st.subheader("🗳️ Electoral Chair - Full - Pending, Approved, Register, Vote, Results")
+    st.subheader("Electoral Chair - Full - Pending, Approved, Register, Vote, Results")
     pend=load_json(PENDING_FILE, st.session_state.pending_candidates)
     cand=load_json(CANDIDATES_FILE, st.session_state.candidates)
     votes=load_json(VOTES_FILE, st.session_state.votes)
-    st.session_state.pending_candidates=pend; st.session_state.candidates=cand; st.session_state.votes=votes
-    t_a,t_b,t_c,t_d,t_e=st.tabs(["⏳ Pending Approval","✅ Approved","📝 Register + Photo","🗳️ Vote Cabinet","📊 Results"])
+    st.session_state.pending_candidates=pend
+    st.session_state.candidates=cand
+    st.session_state.votes=votes
+    t_a,t_b,t_c,t_d,t_e=st.tabs(["Pending Approval","Approved","Register + Photo","Vote Cabinet","Results"])
     with t_a:
         st.write(f"Pending: {len(pend)} - Need Speaker Approval")
         for pc in reversed(pend):
             with st.container(border=True):
-                if os.path.exists(pc.get('photo_path','')): st.image(pc['photo_path'],width=120)
+                if os.path.exists(pc.get('photo_path','')): st.image(pc.get('photo_path',''),width=120)
                 st.write(f"**{pc['name']}** - {USERS[pc['position']]}")
                 st.info(pc.get('reason',''))
                 if user=="speaker":
                     c1,c2=st.columns(2)
                     with c1:
-                        if st.button(f"✅ Approve {pc['name']}",key=f"ap_{pc['id']}", type="primary"):
+                        if st.button(f"Approve {pc['name']}",key=f"ap_{pc['id']}", type="primary"):
                             st.session_state.candidates.append(pc)
                             st.session_state.pending_candidates=[x for x in st.session_state.pending_candidates if x['id']!=pc['id']]
                             save_json(CANDIDATES_FILE, st.session_state.candidates)
                             save_json(PENDING_FILE, st.session_state.pending_candidates)
                             st.success(f"Approved {pc['name']}"); st.rerun()
                     with c2:
-                        if st.button(f"❌ Reject {pc['name']}",key=f"rj_{pc['id']}"):
+                        if st.button(f"Reject {pc['name']}",key=f"rj_{pc['id']}"):
                             st.session_state.pending_candidates=[x for x in st.session_state.pending_candidates if x['id']!=pc['id']]
                             save_json(PENDING_FILE, st.session_state.pending_candidates)
-                            st.warning(f"Rejected"); st.rerun()
+                            st.warning("Rejected"); st.rerun()
     with t_b:
+        st.write(f"Approved: {len(cand)}")
         for pos in ELECTION_POSITIONS:
             cs=[c for c in cand if c['position']==pos]
             if cs:
                 st.write(f"**{USERS[pos]}: {len(cs)}**")
                 for c in cs:
                     with st.container(border=True):
-                        if os.path.exists(c.get('photo_path','')): st.image(c['photo_path'],width=100)
+                        if os.path.exists(c.get('photo_path','')): st.image(c.get('photo_path',''),width=100)
                         st.write(c['name'])
     with t_c:
         rp=st.selectbox("Position",ELECTION_POSITIONS,format_func=lambda x:USERS[x],key="cand_pos")
@@ -408,7 +386,7 @@ with tab4:
         vp=st.selectbox("Vote Position",ELECTION_POSITIONS,format_func=lambda x:USERS[x],key="vote_pos")
         for c in [x for x in cand if x['position']==vp]:
             with st.container(border=True):
-                if os.path.exists(c.get('photo_path','')): st.image(c.get('photo_path'],width=100)
+                if os.path.exists(c.get('photo_path','')): st.image(c.get('photo_path',''),width=100)
                 st.write(c['name'])
                 if st.button(f"Vote {c['name']}",key=f"vote_{c['id']}"):
                     st.session_state.votes.append({"candidate_id":c['id'],"voter_email":user,"position":vp,"date":datetime.datetime.now().strftime("%Y-%m-%d")})
@@ -422,7 +400,7 @@ with tab4:
                 st.write(f"**{USERS[pos]}**"); st.dataframe(pd.DataFrame(rd),use_container_width=True)
 
 with tab5:
-    st.subheader("⚖️ Disciplinary Reports")
+    st.subheader("Disciplinary Reports")
     disc=load_json(DISC_FILE, st.session_state.disciplinary_reports)
     st.session_state.disciplinary_reports=disc
     d_t=st.text_input("Case Title *",key="disc_t")
@@ -437,7 +415,7 @@ with tab5:
             st.info(dr['content'])
 
 with tab6:
-    st.subheader("📋 GP Reports - General Purpose - Vice President Leader")
+    st.subheader("GP Reports - General Purpose - Vice President Leader")
     gp=load_json(GP_FILE, st.session_state.gp_reports)
     st.session_state.gp_reports=gp
     gp_t=st.text_input("GP Title *",key="gp_t")
@@ -452,7 +430,7 @@ with tab6:
             st.info(gpr['content'])
 
 with tab7:
-    st.subheader("💰 Finance Portal - 5 Only - Principal, Patron, President, Speaker, Finance")
+    st.subheader("Finance Portal - 5 Only - Principal, Patron, President, Speaker, Finance")
     fin=load_json(FINANCE_FILE, st.session_state.finance_docs)
     st.session_state.finance_docs=fin
     if user not in FINANCE_5: st.error("Finance ONLY 5: Principal, Patron, His Excellency President, Right Honourable Speaker, Finance"); st.stop()
@@ -478,7 +456,7 @@ with tab7:
                 st.download_button(f"Download {fd['file_name']}", open(fd['file_path'],'rb').read(), file_name=fd['file_name'], key=f"dl_fin_{fd['id']}", type="primary")
 
 with tab8:
-    st.subheader("🔐 Secret Store - Cabinet Secrets")
+    st.subheader("Secret Store - Cabinet Secrets")
     sec=load_json(DOCS_FILE, st.session_state.documents)
     st.session_state.documents=sec
     dc=st.selectbox("Category",DOC_CATEGORIES,key="sec_cat")
@@ -494,7 +472,7 @@ with tab8:
             st.write(d['description'])
 
 with tab9:
-    st.subheader("📄 Documents - PDF, PowerPoint, Word, Excel - For ALL 13 Departments!")
+    st.subheader("Documents - PDF, PowerPoint, Word, Excel - For ALL 13 Departments!")
     st.info("ALL 13 can upload: PDF (.pdf), PowerPoint (.pptx/.ppt), Word (.docx/.doc), Excel (.xlsx/.xls) - All see & download - Saved for years!")
     docs=load_json(UPLOADED_DOCS_FILE, st.session_state.uploaded_docs)
     st.session_state.uploaded_docs=docs
@@ -502,28 +480,28 @@ with tab9:
     dt=st.text_input("Title *",key="doc_t", placeholder="e.g. Budget 2026, Constitution")
     dd=st.text_area("Description",key="doc_d")
     df=st.file_uploader("Upload File * PDF / PPT / Word / Excel - Any of 13 can upload",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv"],key="doc_f")
-    if st.button("📤 Upload Document - Visible to ALL 13",type="primary",use_container_width=True,key="doc_s"):
+    if st.button("Upload Document - Visible to ALL 13",type="primary",use_container_width=True,key="doc_s"):
         if not dt.strip() or not df: st.error("Title + File required!")
         else:
             safe=df.name.replace(" ","_")
             fpath=f"data/documents/doc_{len(docs)+1}_{safe}"
             with open(fpath,'wb') as out: out.write(df.getvalue())
             ext=safe.split('.')[-1].lower()
-            icon="📕 PDF" if ext=="pdf" else "📊 PowerPoint" if ext in ["pptx","ppt"] else "📝 Word" if ext in ["docx","doc"] else "📗 Excel"
+            icon="PDF" if ext=="pdf" else "PowerPoint" if ext in ["pptx","ppt"] else "Word" if ext in ["docx","doc"] else "Excel"
             docs.append({"id":len(docs)+1,"category":dcat,"title":dt.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"file_ext":ext,"file_icon":icon,"size":df.size,"by":user_full,"date":datetime.datetime.now().strftime("%Y-%m-%d %H:%M")})
             save_json(UPLOADED_DOCS_FILE, docs)
             st.success(f"Uploaded {icon} {df.name}! ALL 13 can see!"); st.balloons(); st.rerun()
     st.divider()
     for doc in reversed(docs):
         with st.container(border=True):
-            st.markdown(f"{doc.get('file_icon','📄')} **{doc['title']}** | {doc['category']} | by {doc['by']} | {doc['date']}")
+            st.markdown(f"{doc.get('file_icon','Doc')} **{doc['title']}** | {doc['category']} | by {doc['by']} | {doc['date']}")
             if doc.get('description',''): st.write(doc['description'])
             st.caption(f"File: {doc['file_name']} | {doc.get('file_ext','').upper()} | {doc.get('size',0)//1024} KB")
             if os.path.exists(doc.get('file_path','')):
-                st.download_button(f"📥 Download {doc['file_name']}", open(doc['file_path'],'rb').read(), file_name=doc['file_name'], key=f"dl_doc_{doc['id']}", type="primary", use_container_width=True)
+                st.download_button(f"Download {doc['file_name']}", open(doc['file_path'],'rb').read(), file_name=doc['file_name'], key=f"dl_doc_{doc['id']}", type="primary", use_container_width=True)
 
 with tab10:
-    st.subheader("📸 Media Gallery - ALL SEE - Photos, Videos, Music - ALL 13")
+    st.subheader("Media Gallery - ALL SEE - Photos, Videos, Music - ALL 13")
     med=load_json(MEDIA_FILE, st.session_state.media)
     st.session_state.media=med
     mt=st.text_input("Media Title *",key="media_t")
@@ -545,7 +523,7 @@ with tab10:
                 elif "audio" in m['file_type']: st.audio(m['file_path'])
 
 with tab11:
-    st.subheader("🏛️ Cabinet Archive - For Years - First BEC, Second BEC...")
+    st.subheader("Cabinet Archive - For Years - First BEC, Second BEC...")
     cabs=load_json(CABINETS_FILE, st.session_state.cabinets)
     st.session_state.cabinets=cabs
     st.info("Save cabinets for future years - Works for years!")
