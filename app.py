@@ -66,31 +66,31 @@ if not st.session_state.logged_in:
     st.info("Default: unik2025 | Public: ?public=vote"); st.stop()
 user=st.session_state.user; user_full=USERS[user]
 st.sidebar.title(user_full); st.sidebar.success(f"Logged: {user_full}")
-with st.sidebar.expander("Change My Password"):
+with st.sidebar.expander("Change My Password - My Bottle"):
     cur=st.text_input("Current",type="password",key="cur_pw"); new=st.text_input("New",type="password",key="new_pw"); conf=st.text_input("Confirm",type="password",key="conf_pw")
     if st.button("Save Password",key="save_pw"):
         if cur!=st.session_state.passwords.get(user,"unik2025"): st.sidebar.error("Wrong current")
         elif new!=conf: st.sidebar.error("Don't match")
         else: st.session_state.passwords[user]=new; save_json(FILES["passwords"],st.session_state.passwords); st.sidebar.success(f"Changed to {new}")
 if st.sidebar.button("Logout"): st.session_state.logged_in=False; st.rerun()
-tab0,tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11=st.tabs(["📢 Public Portal","🎥 Meeting","📝 Submit Report","📂 Private Portal","🗳️ Electoral","⚖️ Disciplinary","📋 GP","💰 Finance","🔐 Secret","📄 Documents","📸 Media Gallery FIXED","🏛️ Cabinet Archive"])
+tab0,tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10,tab11=st.tabs(["📢 Public Portal","🎥 Meeting","📝 Submit Report","🔒 Private Portal SUPER 4 ONLY","🗳️ Electoral OPEN ALL 13","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN ALL 13","📄 Documents OPEN ALL 13","📸 Media Gallery OPEN ALL 13","🏛️ Cabinet Archive OPEN ALL 13"])
 with tab0:
     st.subheader("Public Portal - SUPER 4 posts, ALL 13 read")
     anns=load_json(FILES["ann"],st.session_state.ann)
     if user in SUPER_4:
-        at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message to ALL 13 *",key="ann_c",height=120); af=st.file_uploader("Attach",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","jpeg"],key="ann_f")
+        at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message to ALL 13 *",key="ann_c",height=120); af=st.file_uploader("Attach File",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","jpeg"],key="ann_f")
         if st.button("BROADCAST TO ALL 13",type="primary",use_container_width=True):
-            if not at.strip() or not acont.strip(): st.error("Required")
+            if not at.strip() or not acont.strip(): st.error("Title + Message required")
             else:
                 fpath=""; fname=""
                 if af: fname=af.name.replace(" ","_"); fpath=f"data/documents/ann_{len(anns)+1}_{fname}"; open(fpath,'wb').write(af.getvalue())
-                anns.append({"id":len(anns)+1,"title":at.strip(),"content":acont.strip(),"file_name":fname,"file_path":fpath,"from":user,"from_name":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["ann"],anns); st.success("Broadcasted!"); st.balloons(); st.rerun()
+                anns.append({"id":len(anns)+1,"title":at.strip(),"content":acont.strip(),"file_name":fname,"file_path":fpath,"from":user,"from_name":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["ann"],anns); st.success("Broadcasted to ALL 13!"); st.balloons(); st.rerun()
     for ann in reversed(anns):
         with st.container(border=True):
             st.markdown(f"**{ann['title']}** | {ann['from_name']} | {ann['date']}"); st.info(ann['content'])
             if ann.get('file_path','') and os.path.exists(ann['file_path']): st.download_button(f"Download {ann['file_name']}",open(ann['file_path'],'rb').read(),file_name=ann['file_name'],key=f"dl_ann_{ann['id']}")
 with tab1:
-    st.subheader("Online Meeting - ALL 13 can join")
+    st.subheader("Online Meeting - Audio/Video - ALL 13 can join")
     meetings=load_json(FILES["meet"],st.session_state.meet); active=[m for m in meetings if m.get('is_active')]
     if active:
         am=active[-1]; st.success(f"LIVE NOW: {am['title']} by {am['from_name']}"); st.warning(f"Topic: {am['topic']}"); mid=am['meeting_id']
@@ -108,21 +108,24 @@ with tab1:
             if not mt.strip() or not mtop.strip(): st.error("Required")
             else: mid=f"UNIK-BEC-{datetime.datetime.now().strftime('%Y%m%d-%H%M')}-{mt.replace(' ','')[:8]}"; meetings.append({"id":len(meetings)+1,"meeting_id":mid,"title":mt.strip(),"topic":mtop.strip(),"from":user,"from_name":user_full,"date":str(datetime.datetime.now())[:16],"is_active":True}); save_json(FILES["meet"],meetings); st.success(f"Started ID: {mid}"); st.balloons(); st.rerun()
 with tab2:
-    st.subheader("Submit Report")
+    st.subheader("Submit Report - Principal Sees")
     rt=st.selectbox("Report Type",REPORT_TYPES,key="rt"); rtitle=st.text_input("Report Title *",key="rtitle"); rcontent=st.text_area("Details *",key="rcontent",height=120)
     if st.button("Submit Report",type="primary",use_container_width=True):
         if not rtitle.strip() or not rcontent.strip(): st.error("Required")
-        else: st.session_state.reports.append({"id":len(st.session_state.reports)+1,"date":str(datetime.datetime.now())[:16],"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip()}); save_json(FILES["reports"],st.session_state.reports); st.success("Saved!"); st.balloons()
+        else: st.session_state.reports.append({"id":len(st.session_state.reports)+1,"date":str(datetime.datetime.now())[:16],"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip()}); save_json(FILES["reports"],st.session_state.reports); st.success("Saved - Principal will see!"); st.balloons()
 with tab3:
-    st.subheader("Private Portal - SUPER 4 Sees All")
-    reports=load_json(FILES["reports"],st.session_state.reports); show=reports if user in SUPER_4 else [r for r in reports if r['from']==user]
-    st.info(f"Total Reports: {len(show)}")
-    for r in reversed(show):
+    st.subheader("🔒 Private Portal - SUPER 4 ONLY")
+    if user not in SUPER_4:
+        st.error("RESTRICTED: Only SUPER 4 (Principal, Patron, President, Speaker) can access Private Portal")
+        st.stop()
+    reports=load_json(FILES["reports"],st.session_state.reports)
+    st.success(f"SUPER 4 ACCESS: Total Reports from All 13 Departments: {len(reports)}")
+    for r in reversed(reports):
         with st.expander(f"#{r['id']} {r['title']} - {r['from_name']} - {r['date']}"): st.info(r['content'])
 with tab4:
-    st.subheader("Electoral Chair")
+    st.subheader("🗳️ Electoral - OPEN TO ALL 13")
     pend=load_json(FILES["pending"],st.session_state.pending); cand=load_json(FILES["candidates"],st.session_state.candidates); votes=load_json(FILES["votes"],st.session_state.votes)
-    t_a,t_b,t_c=st.tabs(["Pending Approval","Register","Results"])
+    t_a,t_b,t_c=st.tabs(["Pending Approval - Speaker Only","Register OPEN ALL","Results OPEN ALL"])
     with t_a:
         st.write(f"Pending: {len(pend)}")
         for pc in reversed(pend):
@@ -144,67 +147,68 @@ with tab4:
                 rd=[{"Candidate":cc['name'],"Votes":len([v for v in votes if v['candidate_id']==cc['id']])} for cc in cs]
                 st.write(f"**{USERS[pos]}**"); st.dataframe(pd.DataFrame(rd),use_container_width=True)
 with tab5:
-    st.subheader("Disciplinary - OPEN TO ALL 13")
-    disc=load_json(FILES["disc"],st.session_state.disc)
+    st.subheader("⚖️ Disciplinary - OPEN TO ALL 13")
+    disc=load_json(FILES["disc"],st.session_state.disc); st.success("OPEN: All 13 can access this department - Necessary!")
     d_t=st.text_input("Case Title *",key="disc_t"); d_c=st.text_area("Details *",key="disc_c",height=100)
-    if st.button("Save Disciplinary",type="primary"):
+    if st.button("Save Disciplinary",type="primary",key="disc_s"):
         if not d_t or not d_c: st.error("Required")
-        else: disc.append({"id":len(disc)+1,"title":d_t,"content":d_c,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["disc"],disc); st.success("Saved!"); st.rerun()
+        else: disc.append({"id":len(disc)+1,"title":d_t,"content":d_c,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["disc"],disc); st.success("Saved - ALL 13 can see!"); st.rerun()
     for dr in reversed(disc):
         with st.expander(f"{dr['title']} - {dr['by']} - {dr['date']}"): st.info(dr['content'])
 with tab6:
-    st.subheader("GP Reports - OPEN TO ALL 13")
-    gp=load_json(FILES["gp"],st.session_state.gp)
+    st.subheader("📋 GP - OPEN TO ALL 13")
+    gp=load_json(FILES["gp"],st.session_state.gp); st.success("OPEN: All 13 can access GP reports - Necessary!")
     gp_t=st.text_input("GP Title *",key="gp_t"); gp_c=st.text_area("GP Details *",key="gp_c",height=100)
-    if st.button("Save GP",type="primary"):
+    if st.button("Save GP",type="primary",key="gp_s"):
         if not gp_t or not gp_c: st.error("Required")
-        else: gp.append({"id":len(gp)+1,"title":gp_t,"content":gp_c,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["gp"],gp); st.success("Saved!"); st.rerun()
+        else: gp.append({"id":len(gp)+1,"title":gp_t,"content":gp_c,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["gp"],gp); st.success("Saved - ALL 13 can see!"); st.rerun()
     for gpr in reversed(gp):
         with st.expander(f"{gpr['title']} - {gpr['by']} - {gpr['date']}"): st.info(gpr['content'])
 with tab7:
-    st.subheader("Finance - 5 ONLY (Principal, Patron, President, Speaker, Finance)")
+    st.subheader("💰 Finance Portal - 5 ONLY")
     if user not in FINANCE_5:
-        st.error("Finance is ONLY for 5")
+        st.error("RESTRICTED: Finance is ONLY for 5: Principal, Patron, President, Speaker, Finance")
         st.stop()
-    fin=load_json(FILES["finance"],st.session_state.finance)
-    f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload Excel/PPT/PDF/Word",type=["xlsx","xls","pptx","ppt","pdf","docx","doc","csv"],key="fin_f")
-    if st.button("Save Finance Doc",type="primary"):
+    fin=load_json(FILES["finance"],st.session_state.finance); st.success(f"FINANCE 5 ACCESS: Welcome {user_full}!")
+    f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload Excel / PPT / PDF / Word",type=["xlsx","xls","pptx","ppt","pdf","docx","doc","csv"],key="fin_f")
+    if st.button("Save Finance Doc",type="primary",key="fin_s2"):
         if not f_t: st.error("Title required")
         else:
             fname=""; fpath=""
             if f_f: fname=f_f.name.replace(" ","_"); fpath=f"data/documents/finance_{len(fin)+1}_{fname}"; open(fpath,'wb').write(f_f.getvalue())
-            fin.append({"id":len(fin)+1,"title":f_t,"description":f_d,"file_name":fname,"file_path":fpath,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["finance"],fin); st.success("Saved!"); st.rerun()
+            fin.append({"id":len(fin)+1,"title":f_t,"description":f_d,"file_name":fname,"file_path":fpath,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["finance"],fin); st.success("Saved - 5 Only can see & download!"); st.rerun()
     for fd in reversed(fin):
         with st.container(border=True):
             st.write(f"**{fd['title']}** - {fd['by']} - {fd['date']}")
             if fd.get('file_path','') and os.path.exists(fd['file_path']): st.download_button(f"Download {fd['file_name']}",open(fd['file_path'],'rb').read(),file_name=fd['file_name'],key=f"dl_fin_{fd['id']}",type="primary")
 with tab8:
-    st.subheader("Secret Store - OPEN TO ALL 13")
-    sec=load_json(FILES["docs"],st.session_state.docs)
+    st.subheader("🔐 Secret Store - OPEN TO ALL 13")
+    sec=load_json(FILES["docs"],st.session_state.docs); st.success("OPEN: All 13 can access Secret Store!")
     dc=st.selectbox("Category",DOC_CATS,key="sec_cat"); dt=st.text_input("Title *",key="sec_t"); dd=st.text_area("Description",key="sec_d",height=100)
-    if st.button("Save Secret Text",type="primary"):
+    if st.button("Save Secret Text",type="primary",key="sec_s"):
         if not dt.strip(): st.error("Title required")
-        else: sec.append({"id":len(sec)+1,"category":dc,"title":dt.strip(),"description":dd,"by":user_full,"date":str(datetime.datetime.now())[:10]}); save_json(FILES["docs"],sec); st.success("Saved!")
+        else: sec.append({"id":len(sec)+1,"category":dc,"title":dt.strip(),"description":dd,"by":user_full,"date":str(datetime.datetime.now())[:10]}); save_json(FILES["docs"],sec); st.success("Saved - ALL 13 can see!")
     for d in reversed(sec):
         with st.expander(f"{d['category']} | {d['title']} - {d['by']}"): st.write(d['description'])
 with tab9:
-    st.subheader("Documents - OPEN TO ALL 13 - Everyone uploads, everyone sees same!")
-    docs=load_json(FILES["uploaded"],st.session_state.uploaded)
-    dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dt=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d"); df=st.file_uploader("Upload File * PDF/PPT/Word/Excel",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv"],key="doc_f")
-    if st.button("Upload Document - Visible to ALL 13!",type="primary",use_container_width=True):
+    st.subheader("📄 Documents - OPEN TO ALL 13 - EVERYONE CAN UPLOAD & SEE SAME!")
+    docs=load_json(FILES["uploaded"],st.session_state.uploaded); st.success(f"OPEN: ALL 13 can upload & see same! Total: {len(docs)} - No hiding!")
+    dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dt=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d"); df=st.file_uploader("Upload File * PDF/PPT/Word/Excel - ALL 13 can upload!",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv"],key="doc_f")
+    if st.button("Upload Document - Visible to ALL 13!",type="primary",use_container_width=True,key="doc_s"):
         if not dt.strip() or not df: st.error("Title+File required")
-        else: safe=df.name.replace(" ","_"); fpath=f"data/documents/doc_{len(docs)+1}_{safe}"; open(fpath,'wb').write(df.getvalue()); docs.append({"id":len(docs)+1,"category":dcat,"title":dt.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["uploaded"],docs); st.success(f"Uploaded {df.name}! NOW ALL 13 SEE SAME!"); st.balloons(); st.rerun()
+        else:
+            safe=df.name.replace(" ","_"); fpath=f"data/documents/doc_{len(docs)+1}_{safe}"; open(fpath,'wb').write(df.getvalue())
+            docs.append({"id":len(docs)+1,"category":dcat,"title":dt.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"by":user_full,"date":str(datetime.datetime.now())[:16]}); save_json(FILES["uploaded"],docs); st.success(f"Uploaded {df.name}! NOW ALL 13 SEE SAME!"); st.balloons(); st.rerun()
     for doc in reversed(docs):
         with st.container(border=True):
             st.markdown(f"**{doc['title']}** | {doc['category']} | by {doc['by']} | {doc['date']}")
             if doc.get('description',''): st.write(doc['description'])
-            if os.path.exists(doc.get('file_path','')): st.download_button(f"Download {doc['file_name']}",open(doc['file_path'],'rb').read(),file_name=doc['file_name'],key=f"dl_doc_{doc['id']}",type="primary",use_container_width=True)
+            if os.path.exists(doc.get('file_path','')): st.download_button(f"Download {doc['file_name']} - ALL 13 can download!",open(doc['file_path'],'rb').read(),file_name=doc['file_name'],key=f"dl_doc_{doc['id']}",type="primary",use_container_width=True)
 with tab10:
-    st.subheader("📸 Media Gallery - FIXED! OPEN TO ALL 13 - EVERYONE POSTS, EVERYONE SEES SAME!")
-    med=load_json(FILES["media"],st.session_state.media)
-    st.success(f"FIXED AS YOU ASKED! Total Media: {len(med)} - If one posts, ALL 13 see same gallery! No hiding!")
-    mt=st.text_input("Media Title *",key="media_t"); mf=st.file_uploader("File * JPG/PNG/MP4/MP3",type=["jpg","png","jpeg","mp4","mp3","m4a","wav"],key="media_f")
-    if st.button("Upload - Visible to ALL 13 - EVERYONE SEES SAME!",type="primary",use_container_width=True,key="media_s"):
+    st.subheader("📸 Media Gallery - OPEN TO ALL 13 - EVERYONE POSTS, EVERYONE SEES SAME!")
+    med=load_json(FILES["media"],st.session_state.media); st.success(f"FIXED! ALL 13 can post! Total: {len(med)} - If you post, ALL 13 see same gallery! No hiding!")
+    mt=st.text_input("Media Title * - Everyone will see!",key="media_t"); mf=st.file_uploader("File * JPG/PNG/MP4/MP3 - Upload - ALL 13 WILL SEE SAME!",type=["jpg","png","jpeg","mp4","mp3","m4a","wav"],key="media_f")
+    if st.button("Upload - Visible to ALL 13 - EVERYONE SEES SAME GALLERY!",type="primary",use_container_width=True,key="media_s"):
         if not mt.strip() or not mf: st.error("Title+File required")
         else:
             fpath=f"data/media_files/media_{len(med)+1}_{mf.name.replace(' ','_')}"; open(fpath,'wb').write(mf.getvalue())
@@ -218,12 +222,12 @@ with tab10:
                 elif "video" in m['file_type']: st.video(m['file_path'])
                 elif "audio" in m['file_type']: st.audio(m['file_path'])
 with tab11:
-    st.subheader("Cabinet Archive - For Years - OPEN TO ALL 13")
-    cabs=load_json(FILES["cabinets"],st.session_state.cabinets)
-    cy=st.text_input("Year *",key="cab_y"); cn=st.text_input("Cabinet Name *",key="cab_n"); cm=st.text_area("Members *",key="cab_m"); cp=st.file_uploader("Cabinet Photo *",type=["jpg","png","jpeg"],key="cab_p")
-    if st.button("Save Cabinet - Visible to ALL 13!",type="primary",use_container_width=True):
+    st.subheader("🏛️ Cabinet Archive - OPEN TO ALL 13!")
+    cabs=load_json(FILES["cabinets"],st.session_state.cabinets); st.success(f"OPEN: ALL 13 can post & see same! Total: {len(cabs)} - Saved for years!")
+    cy=st.text_input("Year *",key="cab_y"); cn=st.text_input("Cabinet Name * (e.g. First BEC 2026)",key="cab_n"); cm=st.text_area("Members *",key="cab_m"); cp=st.file_uploader("Cabinet Photo *",type=["jpg","png","jpeg"],key="cab_p")
+    if st.button("Save Cabinet - Visible to ALL 13!",type="primary",use_container_width=True,key="cab_s"):
         if not cy or not cn or not cm or not cp: st.error("All fields required")
-        else: fpath=f"data/media_files/cab_{len(cabs)+1}.jpg"; open(fpath,'wb').write(cp.getvalue()); cabs.append({"id":len(cabs)+1,"year":cy.strip(),"name":cn.strip(),"members":cm.strip(),"photo_path":fpath,"by":user_full,"date":str(datetime.datetime.now())[:10]}); save_json(FILES["cabinets"],cabs); st.success("Saved for years!"); st.rerun()
+        else: fpath=f"data/media_files/cab_{len(cabs)+1}.jpg"; open(fpath,'wb').write(cp.getvalue()); cabs.append({"id":len(cabs)+1,"year":cy.strip(),"name":cn.strip(),"members":cm.strip(),"photo_path":fpath,"by":user_full,"date":str(datetime.datetime.now())[:10]}); save_json(FILES["cabinets"],cabs); st.success("Saved for years! NOW ALL 13 CAN SEE!"); st.rerun()
     for cab in reversed(cabs):
         with st.container(border=True):
             st.markdown(f"**{cab['name']} - {cab['year']}** - Posted by {cab['by']} - Visible to ALL 13!")
