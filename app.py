@@ -26,13 +26,10 @@ def add_audit(action,user_full,details=""):
     audit=load_json(FILES["audit"],[]); audit.append({"id":len(audit)+1,"time":dt.now().strftime("%Y-%m-%d %H:%M:%S"),"user":user_full,"action":action,"details":details}); save_json(FILES["audit"],audit)
 
 is_public = st.query_params.get("public","")=="vote"
-st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Portals Open - No Red - Bishop Cipriano Kihangire</p>",unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Portals Open - No Red</p>",unsafe_allow_html=True)
 
-# === PUBLIC VOTE LINK FOR STUDENTS - NO CABINET SECRETS - ADDED AS REQUESTED - DON'T REMOVE ANYTHING ELSE ===
 PUBLIC_VOTE_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
-# Show public link banner for all visitors - Safe for students, no secrets
 st.info(f"🗳️ PUBLIC STUDENT VOTING LINK (Share to all students - No Cabinet Secrets): {PUBLIC_VOTE_LINK}")
-st.markdown(f"<div style='text-align:center; background:#e8f5e9; padding:10px; border-radius:8px; border:2px solid #1a5c2a;'><b>🗳️ FOR ALL UNIK STUDENTS - VOTE HERE - NO LOGIN NEEDED:</b><br><a href='{PUBLIC_VOTE_LINK}' target='_blank' style='font-size:18px; font-weight:bold; color:#1a5c2a;'>{PUBLIC_VOTE_LINK}</a><br><small>One Email = One Vote | Cannot see Cabinet Secrets | Only Voting</small></div>", unsafe_allow_html=True)
 
 USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker - Hon. Lawrence Ssango","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
 LOGIN_USERS=list(USERS.keys())
@@ -90,7 +87,7 @@ if is_public:
     st.stop()
 
 if not st.session_state.logged_in:
-    st.markdown(f"### 🗳️ PUBLIC VOTE FOR ALL STUDENTS\n**Link:** {PUBLIC_VOTE_LINK}\nShare this link - Students cannot see Cabinet Secrets!")
+    st.markdown(f"### 🗳️ PUBLIC VOTE FOR ALL STUDENTS\n**Link:** {PUBLIC_VOTE_LINK}")
     st.markdown(f"<a href='{PUBLIC_VOTE_LINK}' target='_blank' style='background:#1a5c2a;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;'>🗳️ CLICK HERE - STUDENT VOTING - NO LOGIN</a>", unsafe_allow_html=True)
     st.divider()
     st.markdown("### 🔐 Cabinet Login - 13 Departments - UNIK BEC")
@@ -188,8 +185,7 @@ with tabs[5]:
         for r in reversed(filtered):
             with st.expander(f"#{r['id']} {r['title']} - {r['from_name']} - {r['date']}"): st.info(r['content'])
     else:
-        st.error(f"🚫 RESTRICTED: Private is SUPER 4 ONLY (Principal, Patron, President, Speaker). You are {user_full} - Not SUPER 4. But tab is OPEN - No red!")
-        st.info("Contact SUPER 4 to access Private reports. This tab is working - It just shows restriction message instead of killing all tabs!")
+        st.error(f"🚫 RESTRICTED: Private is SUPER 4 ONLY. You are {user_full} - Not SUPER 4. But tab is OPEN - No red!")
 
 with tabs[6]:
     st.subheader("🗳️ Electoral - OPEN TO ALL 13 - NOW OPENS!")
@@ -250,7 +246,7 @@ with tabs[9]:
                 st.markdown(f"**{fd['title']}** - {fd['by']} - UGX {fd.get('amount',0):,}")
                 if fd.get('file_path','') and os.path.exists(fd['file_path']): st.download_button(f"Download {fd['file_name']}",open(fd['file_path'],'rb').read(),file_name=fd['file_name'],key=f"dl_fin_{fd['id']}",type="primary")
     else:
-        st.error(f"🚫 RESTRICTED: Finance is 5 ONLY (Principal, Patron, President, Speaker, Finance). You are {user_full}. Tab is OPEN - No red - Just shows restriction!")
+        st.error(f"🚫 RESTRICTED: Finance is 5 ONLY. You are {user_full}. Tab is OPEN - No red!")
 
 with tabs[10]:
     st.subheader("🔐 Secret - OPEN TO ALL 13 - NOW OPENS!")
@@ -313,4 +309,4 @@ with tabs[14]:
     st.subheader("📜 Audit Log - OPEN - NOW OPENS!"); audit=load_json(FILES["audit"],st.session_state.audit); st.success(f"Total Actions: {len(audit)}"); 
     if audit: st.dataframe(pd.DataFrame(reversed(audit)),use_container_width=True)
 
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED OPEN EDITION | All Tabs Open - No Red - Fixed st.stop() Bug | Speaker Hon. Lawrence Ssango | {dt.now().year} | Public Link: {PUBLIC_VOTE_LINK}</p>",unsafe_allow_html=True)
+st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED OPEN EDITION | All Tabs Open - No Red | Speaker Hon. Lawrence Ssango | {dt.now().year} | Public Link: {PUBLIC_VOTE_LINK}</p>",unsafe_allow_html=True)
