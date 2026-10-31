@@ -72,7 +72,6 @@ if is_public:
                 for c in candidates_here:
                     with st.container(border=True):
                         col1,col2=st.columns([1,3])
-                        # === FIX 1: PHOTO BLUE SCREEN FIXED ===
                         try:
                             if c.get('photo_path','') and os.path.exists(c.get('photo_path','')):
                                 col1.image(c.get('photo_path',''),width=140,caption=c['name'])
@@ -89,12 +88,34 @@ if is_public:
         else: st.warning("Enter valid university email to vote")
     with t3:
         votes=load_json(FILES["votes"],st.session_state.votes); st.success(f"Total Votes: {len(votes)}")
+        st.subheader("📊 Live Results - Photo | Name | Post | Votes")
         for pos in ELECTION_POS:
             cs=[c for c in st.session_state.candidates if c['position']==pos]
             if cs:
+                st.markdown(f"### {USERS[pos]}")
+                h1,h2,h3,h4,h5=st.columns([0.6,1.2,2,1.5,1])
+                h1.markdown("**No.**"); h2.markdown("**Photo**"); h3.markdown("**Contestant**"); h4.markdown("**Post**"); h5.markdown("**Votes**")
+                st.divider()
+                sorted_cs=sorted(cs,key=lambda cc: len([v for v in votes if v['candidate_id']==cc['id']]),reverse=True)
+                for num,cc in enumerate(sorted_cs,1):
+                    vcount=len([v for v in votes if v['candidate_id']==cc['id']])
+                    r1,r2,r3,r4,r5=st.columns([0.6,1.2,2,1.5,1])
+                    r1.markdown(f"**{num}**")
+                    try:
+                        if cc.get('photo_path','') and os.path.exists(cc.get('photo_path','')):
+                            r2.image(cc.get('photo_path',''),width=80)
+                        else:
+                            r2.write(f"📷 {cc['name']}")
+                    except:
+                        r2.write(f"📷 {cc['name']}")
+                    r3.markdown(f"**{cc['name']}**")
+                    r3.write(cc.get('class',''))
+                    r4.write(USERS[pos])
+                    r5.markdown(f"**{vcount}**")
+                    if vcount>0: r5.success(f"{vcount} votes")
+                    st.divider()
                 rd=[{"Candidate":cc['name'],"Votes":len([v for v in votes if v['candidate_id']==cc['id']])} for cc in cs]
-                if sum([x['Votes'] for x in rd])>0:
-                    st.write(f"**{USERS[pos]}**"); st.bar_chart(pd.DataFrame(rd).set_index("Candidate"))
+                if sum([x['Votes'] for x in rd])>0: st.bar_chart(pd.DataFrame(rd).set_index("Candidate"))
     st.stop()
 
 if not st.session_state.logged_in:
@@ -103,7 +124,7 @@ if not st.session_state.logged_in:
     st.divider()
     st.markdown("### 🔐 Cabinet Login - 13 Departments - UNIK BEC")
     u=st.selectbox("Select Office (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
-    p=st.text_input("Password - My Bottle",type="password",key="pass")
+    p=st.text_input("Password - My Portal",type="password",key="pass")
     if st.button("LOGIN TO PORTAL",type="primary",use_container_width=True):
         if p==st.session_state.passwords.get(u,"unik2025"):
             st.session_state.logged_in=True; st.session_state.user=u; st.rerun()
@@ -114,7 +135,7 @@ user=st.session_state.user; user_full=USERS[user]
 st.sidebar.title(user_full); st.sidebar.success(f"Logged: {user_full}")
 with st.sidebar.expander("🔑 Change My Password"):
     cur=st.text_input("Current",type="password",key="cur_pw"); new=st.text_input("New",type="password",key="new_pw"); conf=st.text_input("Confirm",type="password",key="conf_pw")
-    if st.button("Save My Bottle",key="save_pw"):
+    if st.button("Save My Portal",key="save_pw"):
         if cur!=st.session_state.passwords.get(user,"unik2025"): st.sidebar.error("Wrong current")
         elif new!=conf: st.sidebar.error("Don't match")
         else: st.session_state.passwords[user]=new; save_json(FILES["passwords"],st.session_state.passwords); st.sidebar.success(f"Changed! New: {new}")
@@ -214,7 +235,6 @@ with tabs[6]:
         for pc in reversed(pend):
             with st.container(border=True):
                 col1,col2=st.columns([1,3])
-                # === FIX 1: PHOTO BLUE SCREEN FIXED HERE TOO ===
                 try:
                     if os.path.exists(pc.get('photo_path','')):
                         col1.image(pc.get('photo_path',''),width=130,caption=pc['name'])
@@ -235,21 +255,28 @@ with tabs[6]:
                 nid=len(cand)+len(pend)+1; fpath=f"data/media_files/cand_{nid}.jpg"; open(fpath,'wb').write(rphoto.getvalue())
                 st.session_state.candidates.append({"id":nid,"position":rp,"name":rn,"class":"","reason":"Cabinet Member","photo_path":fpath,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["candidates"],st.session_state.candidates); st.success(f"Registered {rn}! Photo fixed!"); st.balloons()
     with t_c:
-        st.write(f"Total Votes: {len(votes)} - Photo Fixed!")
+        st.write(f"Total Votes: {len(votes)} - Photo | Name | Post | Votes")
         for pos in ELECTION_POS:
             cs=[c for c in cand if c['position']==pos]
             if cs:
-                for cc in cs:
-                    with st.container(border=True):
-                        col1,col2,col3=st.columns([1,2,1])
-                        try:
-                            if os.path.exists(cc.get('photo_path','')): col1.image(cc.get('photo_path',''),width=100)
-                            else: col1.write(f"📷 {cc['name']}")
-                        except: col1.write(f"📷 {cc['name']}")
-                        col2.write(f"**{cc['name']}** - Votes: {len([v for v in votes if v['candidate_id']==cc['id']])}")
-                        if col3.button(f"🗑️ Delete {cc['name']}",key=f"del_cand_{cc['id']}"): st.session_state.candidates=[x for x in st.session_state.candidates if x['id']!=cc['id']]; save_json(FILES["candidates"],st.session_state.candidates); st.success("Deleted candidate!"); st.rerun()
-                rd=[{"Candidate":cc['name'],"Votes":len([v for v in votes if v['candidate_id']==cc['id']])} for cc in cs]
-                st.dataframe(pd.DataFrame(rd).sort_values("Votes",ascending=False),use_container_width=True)
+                st.markdown(f"### {USERS[pos]}")
+                h1,h2,h3,h4,h5=st.columns([0.6,1.2,2,1.5,1])
+                h1.markdown("**No.**"); h2.markdown("**Photo**"); h3.markdown("**Contestant**"); h4.markdown("**Post**"); h5.markdown("**Votes**")
+                st.divider()
+                sorted_cs=sorted(cs,key=lambda cc: len([v for v in votes if v['candidate_id']==cc['id']]),reverse=True)
+                for num,cc in enumerate(sorted_cs,1):
+                    vcount=len([v for v in votes if v['candidate_id']==cc['id']])
+                    r1,r2,r3,r4,r5=st.columns([0.6,1.2,2,1.5,1])
+                    r1.markdown(f"**{num}**")
+                    try:
+                        if os.path.exists(cc.get('photo_path','')): r2.image(cc.get('photo_path',''),width=80)
+                        else: r2.write(f"📷 {cc['name']}")
+                    except: r2.write(f"📷 {cc['name']}")
+                    r3.markdown(f"**{cc['name']}**")
+                    r4.write(USERS[pos])
+                    r5.markdown(f"**{vcount}**")
+                    if st.button(f"🗑️ Delete {cc['name']}",key=f"del_cand_{cc['id']}"): st.session_state.candidates=[x for x in st.session_state.candidates if x['id']!=cc['id']]; save_json(FILES["candidates"],st.session_state.candidates); st.success("Deleted candidate!"); st.rerun()
+                    st.divider()
 
 with tabs[7]:
     st.subheader("⚖️ Disciplinary - OPEN TO ALL 13 - NOW OPENS!")
@@ -317,14 +344,12 @@ with tabs[11]:
             if os.path.exists(doc.get('file_path','')):
                 if doc['file_path'].endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(doc['file_path'])
                 st.download_button(f"Download {doc['file_name']}",open(doc['file_path'],'rb').read(),file_name=doc['file_name'],key=f"dl_doc_{doc['id']}",type="primary")
-            c1,c2=st.columns(2)
-            if c2.button(f"🗑️ Delete {doc['title']}",key=f"del_doc_{doc['id']}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
+            if st.button(f"🗑️ Delete {doc['title']}",key=f"del_doc_{doc['id']}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
 
 with tabs[12]:
     st.subheader("📸 Media Gallery - OPEN TO ALL 13 - AUDIO ACCESS + DELETE - FIXED!")
     med=load_json(FILES["media"],st.session_state.media)
     st.success(f"FIXED! Photo fixed + Audio access added + Delete! Total: {len(med)}")
-    # === FIX 2: AUDIO ACCESS ADDED ===
     mt=st.text_input("Media Title *",key="media_t"); mf=st.file_uploader("File * JPG/PNG/MP4/MP3/M4A/WAV/OGG - Audio access added!",type=["jpg","png","jpeg","mp4","mp3","m4a","wav","ogg","mov"],key="media_f")
     if st.button("Upload - ALL 13 SEE SAME GALLERY! - AUDIO + DELETE!",type="primary",use_container_width=True,key="media_s"):
         if not mt.strip() or not mf: st.error("Title + File required")
@@ -338,7 +363,6 @@ with tabs[12]:
                 st.write(f"**{m['title']}** - {m['by']} - {m['date']}")
                 fp=m.get('file_path','')
                 if fp and os.path.exists(fp):
-                    # Display based on type - Photo, Video, Audio
                     if fp.lower().endswith(('.jpg','.png','.jpeg')):
                         try: st.image(fp,use_container_width=True)
                         except: st.write(f"📷 {m['file_name']}")
@@ -346,7 +370,6 @@ with tabs[12]:
                         try: st.video(fp)
                         except: st.write(f"🎥 {m['file_name']}")
                     elif fp.lower().endswith(('.mp3','.m4a','.wav','.ogg')):
-                        # AUDIO ACCESS - As requested!
                         try: st.audio(fp)
                         except: st.write(f"🎵 Audio: {m['file_name']}")
                         st.success(f"🎵 Audio: {m['file_name']}")
@@ -355,10 +378,8 @@ with tabs[12]:
                     st.download_button(f"⬇️ Download {m['file_name']}",open(fp,'rb').read(),file_name=m['file_name'],key=f"dl_med_{m['id']}")
                 else:
                     st.warning(f"File not found: {m.get('file_name','')}")
-                # === FIX 2: DELETE BUTTON ADDED ===
                 if st.button(f"🗑️ DELETE - {m['title']}",key=f"del_med_{m['id']}",type="secondary",use_container_width=True):
                     med=[x for x in med if x['id']!=m['id']]
-                    # Try delete file too
                     try:
                         if fp and os.path.exists(fp): os.remove(fp)
                     except: pass
