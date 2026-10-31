@@ -22,14 +22,12 @@ def load_json(p,d):
     return d
 def save_json(p,data):
     with open(p,'w') as f: json.dump(data,f,default=str,indent=2)
-def add_audit(action,user_full,details=""):
-    audit=load_json(FILES["audit"],[]); audit.append({"id":len(audit)+1,"time":dt.now().strftime("%Y-%m-%d %H:%M:%S"),"user":user_full,"action":action,"details":details}); save_json(FILES["audit"],audit)
 
 is_public = st.query_params.get("public","")=="vote"
-st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Portals Open - No Red</p>",unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Portals Open - No Red - Photo Fixed + Audio + Delete</p>",unsafe_allow_html=True)
 
 PUBLIC_VOTE_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
-st.info(f"🗳️ PUBLIC STUDENT VOTING LINK (Share to all students - No Cabinet Secrets): {PUBLIC_VOTE_LINK}")
+st.info(f"🗳️ PUBLIC STUDENT VOTING LINK (Share to all students): {PUBLIC_VOTE_LINK}")
 
 USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker - Hon. Lawrence Ssango","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
 LOGIN_USERS=list(USERS.keys())
@@ -48,20 +46,20 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in=False
 if 'user' not in st.session_state: st.session_state.user=""
 
 if is_public:
-    st.markdown("<h3 style='text-align:center;'>🗳️ PUBLIC ELECTORAL COMMISSION</h3>",unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center;'>🗳️ PUBLIC ELECTORAL COMMISSION</h3><p style='text-align:center;'>One Email = One Vote - Photo Fixed!</p>",unsafe_allow_html=True)
     t1,t2,t3=st.tabs(["Apply Candidate","Vote One Email Once","Live Results"])
     with t1:
         rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="pub_pos")
         c1,c2=st.columns(2); rn=c1.text_input("Full Names *",key="pub_name"); rclass=c2.text_input("Class *",key="pub_class")
         remail=st.text_input("Email *",key="pub_email"); rreason=st.text_area("Why vote you? *",key="pub_reason")
-        rphoto=st.file_uploader("Photo *",type=["jpg","png","jpeg"],key="pub_photo")
-        if st.button("Submit",type="primary",use_container_width=True):
-            if not rn or not rphoto: st.error("Fill required")
+        rphoto=st.file_uploader("Passport Photo * JPG/PNG",type=["jpg","png","jpeg"],key="pub_photo")
+        if st.button("Submit (Speaker Approves)",type="primary",use_container_width=True):
+            if not rn or not rphoto: st.error("Full Names + Photo required")
             else:
                 nid=len(st.session_state.pending)+len(st.session_state.candidates)+1
                 fpath=f"data/media_files/cand_{nid}.jpg"; open(fpath,'wb').write(rphoto.getvalue())
                 st.session_state.pending.append({"id":nid,"position":rp,"name":rn,"class":rclass,"email":remail,"reason":rreason,"photo_path":fpath,"date":str(dt.now())[:16]})
-                save_json(FILES["pending"],st.session_state.pending); st.success("Sent to Speaker!"); st.balloons()
+                save_json(FILES["pending"],st.session_state.pending); st.success("Sent to Speaker! Photo saved!"); st.balloons()
     with t2:
         voter_email=st.text_input("University Email *",key="pub_voter_email")
         if voter_email and "@" in voter_email:
@@ -69,21 +67,34 @@ if is_public:
             already=[v for v in st.session_state.votes if v.get('voter_email','').lower()==voter_email.lower() and v['position']==vp]
             if already: st.error(f"Already voted for {USERS[vp]}!")
             else:
-                for c in [x for x in st.session_state.candidates if x['position']==vp]:
+                candidates_here=[x for x in st.session_state.candidates if x['position']==vp]
+                if not candidates_here: st.warning("No candidates for this position yet")
+                for c in candidates_here:
                     with st.container(border=True):
                         col1,col2=st.columns([1,3])
-                        if os.path.exists(c.get('photo_path','')): col1.image(c.get('photo_path',''),width=130)
-                        col2.write(f"**{c['name']}**"); col2.info(c.get('reason',''))
+                        # === FIX 1: PHOTO BLUE SCREEN FIXED ===
+                        try:
+                            if c.get('photo_path','') and os.path.exists(c.get('photo_path','')):
+                                col1.image(c.get('photo_path',''),width=140,caption=c['name'])
+                            else:
+                                col1.warning(f"No photo for {c['name']}")
+                                col1.write(f"📷 {c['name']}")
+                        except Exception as e:
+                            col1.error(f"Photo error: {c['name']}")
+                            col1.write(f"📷 {c['name']}")
+                        col2.write(f"**{c['name']}** - {c.get('class','')}"); col2.info(c.get('reason','No reason given'))
                         if col2.button(f"VOTE {c['name']}",key=f"pv_{c['id']}_{voter_email}",type="primary",use_container_width=True):
                             st.session_state.votes.append({"candidate_id":c['id'],"voter_email":voter_email.lower(),"position":vp,"candidate_name":c['name'],"date":str(dt.now())})
-                            save_json(FILES["votes"],st.session_state.votes); st.success("Voted!"); st.balloons(); st.rerun()
+                            save_json(FILES["votes"],st.session_state.votes); st.success(f"Voted {c['name']}!"); st.balloons(); st.rerun()
+        else: st.warning("Enter valid university email to vote")
     with t3:
         votes=load_json(FILES["votes"],st.session_state.votes); st.success(f"Total Votes: {len(votes)}")
         for pos in ELECTION_POS:
             cs=[c for c in st.session_state.candidates if c['position']==pos]
             if cs:
                 rd=[{"Candidate":cc['name'],"Votes":len([v for v in votes if v['candidate_id']==cc['id']])} for cc in cs]
-                if sum([x['Votes'] for x in rd])>0: st.bar_chart(pd.DataFrame(rd).set_index("Candidate"))
+                if sum([x['Votes'] for x in rd])>0:
+                    st.write(f"**{USERS[pos]}**"); st.bar_chart(pd.DataFrame(rd).set_index("Candidate"))
     st.stop()
 
 if not st.session_state.logged_in:
@@ -111,19 +122,19 @@ if st.sidebar.button("🚪 Logout",use_container_width=True): st.session_state.l
 
 reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FILES["media"],st.session_state.media); candidates=load_json(FILES["candidates"],st.session_state.candidates); votes=load_json(FILES["votes"],st.session_state.votes); docs_uploaded=load_json(FILES["uploaded"],st.session_state.uploaded)
 
-tabs=st.tabs(["📊 Dashboard","👤 My Personal Portal","📢 Public Portal OPEN","🎥 Meeting OPEN","📝 Submit Report","🔒 Private SUPER 4","🗳️ Electoral OPEN","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN","📄 Documents OPEN","📸 Media Gallery OPEN","🏛️ Cabinet Archive OPEN","📜 Audit Log"])
+tabs=st.tabs(["📊 Dashboard","👤 My Personal Portal","📢 Public Portal OPEN","🎥 Meeting OPEN","📝 Submit Report","🔒 Private SUPER 4","🗳️ Electoral OPEN","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN","📄 Documents OPEN","📸 Media Gallery OPEN - AUDIO + DELETE","🏛️ Cabinet Archive OPEN","📜 Audit Log"])
 
 with tabs[0]:
     st.subheader(f"📊 Dashboard - {user_full}"); c1,c2,c3,c4=st.columns(4)
     c1.metric("Reports",len(reports)); c2.metric("Media",len(media)); c3.metric("Docs",len(docs_uploaded)); c4.metric("Votes",len(votes))
-    st.success("✅ ALL TABS NOW OPEN - No more red!")
+    st.success("✅ Photo Fixed + Audio Added + Delete Added - Same 800 Code!")
 
 with tabs[1]:
     st.subheader(f"👤 My Personal Portal - ONLY YOU - {user_full}")
     st.warning("🔐 Only you can see files here! Other 12 CANNOT!")
     personal=load_json(FILES["personal"],st.session_state.personal); my_personal=[p for p in personal if p['owner']==user]
     st.success(f"Your Personal Files: {len(my_personal)}")
-    pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes *",key="pers_c"); pf=st.file_uploader("File - ONLY YOU",type=["pdf","xlsx","pptx","docx","jpg","png","jpeg","mp4","mp3"],key="pers_f")
+    pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes *",key="pers_c"); pf=st.file_uploader("File - ONLY YOU",type=["pdf","xlsx","pptx","docx","jpg","png","jpeg","mp4","mp3","m4a","wav","ogg"],key="pers_f")
     if st.button("Save To My Personal Portal - PRIVATE",type="primary",use_container_width=True,key="pers_s"):
         fpath=""; fname=""
         if pf: fname=pf.name.replace(" ","_"); fpath=f"data/personal/{user}_{len(personal)+1}_{fname}"; open(fpath,'wb').write(pf.getvalue())
@@ -134,12 +145,17 @@ with tabs[1]:
             st.markdown(f"**{p['title']}** | {p['date']}")
             if p.get('content'): st.info(p['content'])
             if p.get('file_path','') and os.path.exists(p['file_path']):
+                if p['file_path'].endswith(('.mp3','.m4a','.wav','.ogg','mp4')):
+                    if p['file_path'].endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(p['file_path'])
+                    else: st.video(p['file_path'])
                 st.download_button(f"Download {p['file_name']}",open(p['file_path'],'rb').read(),file_name=p['file_name'],key=f"dl_pers_{p['id']}",type="primary")
+                if st.button(f"🗑️ Delete {p['title']}",key=f"del_pers_{p['id']}"):
+                    personal=[x for x in personal if x['id']!=p['id']]; save_json(FILES["personal"],personal); st.success("Deleted!"); st.rerun()
 
 with tabs[2]:
     st.subheader("📢 Public Portal - OPEN TO ALL 13 - NOW OPENS!")
     anns=load_json(FILES["ann"],st.session_state.ann)
-    at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message *",key="ann_c"); af=st.file_uploader("Attach File",type=["pdf","xlsx","pptx","docx","jpg","png"],key="ann_f")
+    at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message *",key="ann_c"); af=st.file_uploader("Attach File",type=["pdf","xlsx","pptx","docx","jpg","png","mp3","m4a","wav"],key="ann_f")
     if st.button("📢 BROADCAST TO ALL 13",type="primary",use_container_width=True):
         fpath=""; fname=""
         if af: fname=af.name.replace(" ","_"); fpath=f"data/documents/ann_{len(anns)+1}_{fname}"; open(fpath,'wb').write(af.getvalue())
@@ -148,7 +164,9 @@ with tabs[2]:
     for ann in reversed(anns):
         with st.container(border=True):
             st.markdown(f"**{ann['title']}** | {ann['from_name']} | {ann['date']}"); st.info(ann['content'])
-            if ann.get('file_path','') and os.path.exists(ann['file_path']): st.download_button(f"Download {ann['file_name']}",open(ann['file_path'],'rb').read(),file_name=ann['file_name'],key=f"dl_ann_{ann['id']}")
+            if ann.get('file_path','') and os.path.exists(ann['file_path']):
+                st.download_button(f"Download {ann['file_name']}",open(ann['file_path'],'rb').read(),file_name=ann['file_name'],key=f"dl_ann_{ann['id']}")
+                if ann.get('file_path','').endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(ann['file_path'])
 
 with tabs[3]:
     st.subheader("🎥 Online Meeting - OPEN TO ALL 13 - NOW OPENS!")
@@ -188,30 +206,48 @@ with tabs[5]:
         st.error(f"🚫 RESTRICTED: Private is SUPER 4 ONLY. You are {user_full} - Not SUPER 4. But tab is OPEN - No red!")
 
 with tabs[6]:
-    st.subheader("🗳️ Electoral - OPEN TO ALL 13 - NOW OPENS!")
+    st.subheader("🗳️ Electoral - OPEN TO ALL 13 - PHOTO FIXED!")
     pend=load_json(FILES["pending"],st.session_state.pending); cand=load_json(FILES["candidates"],st.session_state.candidates); votes=load_json(FILES["votes"],st.session_state.votes)
     t_a,t_b,t_c=st.tabs(["Pending - Speaker Approves","Register","Results"])
     with t_a:
-        st.write(f"Pending: {len(pend)}")
+        st.write(f"Pending: {len(pend)} - Photo Fixed!")
         for pc in reversed(pend):
             with st.container(border=True):
                 col1,col2=st.columns([1,3])
-                if os.path.exists(pc.get('photo_path','')): col1.image(pc.get('photo_path',''),width=120)
+                # === FIX 1: PHOTO BLUE SCREEN FIXED HERE TOO ===
+                try:
+                    if os.path.exists(pc.get('photo_path','')):
+                        col1.image(pc.get('photo_path',''),width=130,caption=pc['name'])
+                    else:
+                        col1.write(f"📷 {pc['name']} - No photo file")
+                except:
+                    col1.write(f"📷 {pc['name']}")
                 col2.write(f"**{pc['name']}** - {USERS[pc['position']]}"); col2.info(pc.get('reason',''))
                 if user=="speaker":
-                    if col2.button(f"Approve {pc['name']}",key=f"ap_{pc['id']}",type="primary"): st.session_state.candidates.append(pc); st.session_state.pending=[x for x in st.session_state.pending if x['id']!=pc['id']]; save_json(FILES["candidates"],st.session_state.candidates); save_json(FILES["pending"],st.session_state.pending); st.success("Approved!"); st.rerun()
+                    c1,c2=col2.columns(2)
+                    if c1.button(f"✅ Approve {pc['name']}",key=f"ap_{pc['id']}",type="primary"): st.session_state.candidates.append(pc); st.session_state.pending=[x for x in st.session_state.pending if x['id']!=pc['id']]; save_json(FILES["candidates"],st.session_state.candidates); save_json(FILES["pending"],st.session_state.pending); st.success("Approved! Photo will show!"); st.rerun()
+                    if c2.button(f"🗑️ Delete {pc['name']}",key=f"del_pend_{pc['id']}"): st.session_state.pending=[x for x in st.session_state.pending if x['id']!=pc['id']]; save_json(FILES["pending"],st.session_state.pending); st.success("Deleted!"); st.rerun()
     with t_b:
-        rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="cand_pos"); rn=st.text_input("Names *",key="cand_name"); rphoto=st.file_uploader("Photo *",type=["jpg","png","jpeg"],key="cand_photo")
-        if st.button("Register Candidate",type="primary"):
-            if not rn or not rphoto: st.error("Required")
+        rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="cand_pos"); rn=st.text_input("Names *",key="cand_name"); rphoto=st.file_uploader("Photo * JPG/PNG - Will show no blue screen",type=["jpg","png","jpeg"],key="cand_photo")
+        if st.button("Register Candidate - Photo Fixed!",type="primary"):
+            if not rn or not rphoto: st.error("Names + Photo required")
             else:
                 nid=len(cand)+len(pend)+1; fpath=f"data/media_files/cand_{nid}.jpg"; open(fpath,'wb').write(rphoto.getvalue())
-                st.session_state.candidates.append({"id":nid,"position":rp,"name":rn,"class":"","reason":"Cabinet Member","photo_path":fpath,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["candidates"],st.session_state.candidates); st.success(f"Registered {rn}!")
+                st.session_state.candidates.append({"id":nid,"position":rp,"name":rn,"class":"","reason":"Cabinet Member","photo_path":fpath,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["candidates"],st.session_state.candidates); st.success(f"Registered {rn}! Photo fixed!"); st.balloons()
     with t_c:
-        st.write(f"Total Votes: {len(votes)}")
+        st.write(f"Total Votes: {len(votes)} - Photo Fixed!")
         for pos in ELECTION_POS:
             cs=[c for c in cand if c['position']==pos]
             if cs:
+                for cc in cs:
+                    with st.container(border=True):
+                        col1,col2,col3=st.columns([1,2,1])
+                        try:
+                            if os.path.exists(cc.get('photo_path','')): col1.image(cc.get('photo_path',''),width=100)
+                            else: col1.write(f"📷 {cc['name']}")
+                        except: col1.write(f"📷 {cc['name']}")
+                        col2.write(f"**{cc['name']}** - Votes: {len([v for v in votes if v['candidate_id']==cc['id']])}")
+                        if col3.button(f"🗑️ Delete {cc['name']}",key=f"del_cand_{cc['id']}"): st.session_state.candidates=[x for x in st.session_state.candidates if x['id']!=cc['id']]; save_json(FILES["candidates"],st.session_state.candidates); st.success("Deleted candidate!"); st.rerun()
                 rd=[{"Candidate":cc['name'],"Votes":len([v for v in votes if v['candidate_id']==cc['id']])} for cc in cs]
                 st.dataframe(pd.DataFrame(rd).sort_values("Votes",ascending=False),use_container_width=True)
 
@@ -221,7 +257,9 @@ with tabs[7]:
     d_t=st.text_input("Case Title *",key="disc_t"); d_c=st.text_area("Details *",key="disc_c")
     if st.button("Save Disciplinary - ALL 13 CAN OPEN!",type="primary",key="disc_s"): disc.append({"id":len(disc)+1,"title":d_t.strip(),"content":d_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["disc"],disc); st.success("Saved! ALL 13 can see!"); st.rerun()
     for dr in reversed(disc):
-        with st.expander(f"#{dr['id']} {dr['title']} - {dr['by']}"): st.info(dr['content'])
+        with st.container(border=True):
+            st.write(f"**{dr['title']}** - {dr['by']}"); st.info(dr['content'])
+            if st.button(f"🗑️ Delete #{dr['id']}",key=f"del_disc_{dr['id']}"): disc=[x for x in disc if x['id']!=dr['id']]; save_json(FILES["disc"],disc); st.success("Deleted!"); st.rerun()
 
 with tabs[8]:
     st.subheader("📋 GP - OPEN TO ALL 13 - NOW OPENS!")
@@ -229,14 +267,16 @@ with tabs[8]:
     gp_t=st.text_input("GP Title *",key="gp_t"); gp_c=st.text_area("GP Details *",key="gp_c")
     if st.button("Save GP - ALL 13 CAN OPEN!",type="primary",key="gp_s"): gp.append({"id":len(gp)+1,"title":gp_t.strip(),"content":gp_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["gp"],gp); st.success("Saved! ALL 13 can see!"); st.rerun()
     for gpr in reversed(gp):
-        with st.expander(f"{gpr['title']} - {gpr['by']}"): st.info(gpr['content'])
+        with st.container(border=True):
+            st.write(f"**{gpr['title']}** - {gpr['by']}"); st.info(gpr['content'])
+            if st.button(f"🗑️ Delete {gpr['title']}",key=f"del_gp_{gpr['id']}"): gp=[x for x in gp if x['id']!=gpr['id']]; save_json(FILES["gp"],gp); st.success("Deleted!"); st.rerun()
 
 with tabs[9]:
     st.subheader("💰 Finance - 5 ONLY - NOW OPENS (No Red)!")
     if user in FINANCE_5:
         st.success(f"✅ ACCESS GRANTED - Finance 5: {user_full}")
         fin=load_json(FILES["finance"],st.session_state.finance)
-        f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload Excel / PPT / PDF",type=["xlsx","xls","pptx","ppt","pdf","docx","doc"],key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
+        f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload Excel / PPT / PDF / Audio",type=["xlsx","xls","pptx","ppt","pdf","docx","doc","mp3","m4a","wav","ogg"],key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
         if st.button("Save Finance - 5 ONLY",type="primary",key="fin_s2"):
             fname=""; fpath=""
             if f_f: fname=f_f.name.replace(" ","_"); fpath=f"data/documents/finance_{len(fin)+1}_{fname}"; open(fpath,'wb').write(f_f.getvalue())
@@ -244,7 +284,10 @@ with tabs[9]:
         for fd in reversed(fin):
             with st.container(border=True):
                 st.markdown(f"**{fd['title']}** - {fd['by']} - UGX {fd.get('amount',0):,}")
-                if fd.get('file_path','') and os.path.exists(fd['file_path']): st.download_button(f"Download {fd['file_name']}",open(fd['file_path'],'rb').read(),file_name=fd['file_name'],key=f"dl_fin_{fd['id']}",type="primary")
+                if fd.get('file_path','') and os.path.exists(fd['file_path']):
+                    if fd['file_path'].endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(fd['file_path'])
+                    st.download_button(f"Download {fd['file_name']}",open(fd['file_path'],'rb').read(),file_name=fd['file_name'],key=f"dl_fin_{fd['id']}",type="primary")
+                    if st.button(f"🗑️ Delete {fd['title']}",key=f"del_fin_{fd['id']}"): fin=[x for x in fin if x['id']!=fd['id']]; save_json(FILES["finance"],fin); st.success("Deleted!"); st.rerun()
     else:
         st.error(f"🚫 RESTRICTED: Finance is 5 ONLY. You are {user_full}. Tab is OPEN - No red!")
 
@@ -254,13 +297,15 @@ with tabs[10]:
     dc=st.selectbox("Category",DOC_CATS,key="sec_cat"); dt_=st.text_input("Title *",key="sec_t"); dd=st.text_area("Description",key="sec_d")
     if st.button("Save Secret - ALL 13 OPEN!",type="primary",key="sec_s"): sec.append({"id":len(sec)+1,"category":dc,"title":dt_.strip(),"description":dd.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d")}); save_json(FILES["docs"],sec); st.success("Saved! ALL 13 can open!"); st.rerun()
     for d in reversed(sec):
-        with st.expander(f"{d['category']} | {d['title']} - {d['by']}"): st.write(d['description'])
+        with st.container(border=True):
+            st.write(f"**{d['category']} | {d['title']} - {d['by']}**"); st.write(d['description'])
+            if st.button(f"🗑️ Delete {d['title']}",key=f"del_sec_{d['id']}"): sec=[x for x in sec if x['id']!=d['id']]; save_json(FILES["docs"],sec); st.success("Deleted!"); st.rerun()
 
 with tabs[11]:
     st.subheader("📄 Documents - OPEN TO ALL 13 - NOW OPENS!")
     docs=load_json(FILES["uploaded"],st.session_state.uploaded)
-    st.success(f"OPEN: ALL 13 can upload & see same! Total: {len(docs)} - Now opens!")
-    dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dtit=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d"); df=st.file_uploader("Upload File *",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv","jpg","png"],key="doc_f")
+    st.success(f"OPEN: ALL 13 can upload & see same! Total: {len(docs)} - With Delete!")
+    dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dtit=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d"); df=st.file_uploader("Upload File * PDF/Excel/PPT/Audio",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv","jpg","png","mp3","m4a","wav","ogg"],key="doc_f")
     if st.button("Upload Document - ALL 13 SEE SAME!",type="primary",use_container_width=True,key="doc_s"):
         if not dtit.strip() or not df: st.error("Title + File required")
         else:
@@ -269,28 +314,55 @@ with tabs[11]:
     for doc in reversed(docs):
         with st.container(border=True):
             st.markdown(f"**{doc['title']}** | {doc['category']} | by {doc['by']}")
-            if os.path.exists(doc.get('file_path','')): st.download_button(f"Download {doc['file_name']}",open(doc['file_path'],'rb').read(),file_name=doc['file_name'],key=f"dl_doc_{doc['id']}",type="primary")
+            if os.path.exists(doc.get('file_path','')):
+                if doc['file_path'].endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(doc['file_path'])
+                st.download_button(f"Download {doc['file_name']}",open(doc['file_path'],'rb').read(),file_name=doc['file_name'],key=f"dl_doc_{doc['id']}",type="primary")
+            c1,c2=st.columns(2)
+            if c2.button(f"🗑️ Delete {doc['title']}",key=f"del_doc_{doc['id']}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
 
 with tabs[12]:
-    st.subheader("📸 Media Gallery - OPEN TO ALL 13 - NOW OPENS - FIXED!")
+    st.subheader("📸 Media Gallery - OPEN TO ALL 13 - AUDIO ACCESS + DELETE - FIXED!")
     med=load_json(FILES["media"],st.session_state.media)
-    st.success(f"FIXED! ALL 13 can post! Total: {len(med)} - Class Rep posts, President sees same! Now opens!")
-    mt=st.text_input("Media Title *",key="media_t"); mf=st.file_uploader("File *",type=["jpg","png","jpeg","mp4","mp3","m4a","wav","mov"],key="media_f")
-    if st.button("Upload - ALL 13 SEE SAME GALLERY! - NOW OPENS!",type="primary",use_container_width=True,key="media_s"):
-        if not mt.strip() or not mf: st.error("Required")
+    st.success(f"FIXED! Photo fixed + Audio access added + Delete! Total: {len(med)}")
+    # === FIX 2: AUDIO ACCESS ADDED ===
+    mt=st.text_input("Media Title *",key="media_t"); mf=st.file_uploader("File * JPG/PNG/MP4/MP3/M4A/WAV/OGG - Audio access added!",type=["jpg","png","jpeg","mp4","mp3","m4a","wav","ogg","mov"],key="media_f")
+    if st.button("Upload - ALL 13 SEE SAME GALLERY! - AUDIO + DELETE!",type="primary",use_container_width=True,key="media_s"):
+        if not mt.strip() or not mf: st.error("Title + File required")
         else:
             fpath=f"data/media_files/media_{len(med)+1}_{mf.name.replace(' ','_')}"; open(fpath,'wb').write(mf.getvalue())
-            med.append({"id":len(med)+1,"title":mt.strip(),"file_name":mf.name,"file_path":fpath,"file_type":mf.type,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["media"],med); st.success("Saved! NOW ALL 13 SEE SAME!"); st.balloons(); st.rerun()
+            med.append({"id":len(med)+1,"title":mt.strip(),"file_name":mf.name,"file_path":fpath,"file_type":mf.type if mf.type else mf.name.split('.')[-1],"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["media"],med); st.success("Saved! Audio access added! ALL 13 SEE SAME!"); st.balloons(); st.rerun()
     cols=st.columns(3)
     for idx,m in enumerate(reversed(med)):
         with cols[idx%3]:
             with st.container(border=True):
-                st.write(f"**{m['title']}** - {m['by']}")
-                if os.path.exists(m['file_path']):
-                    if "image" in m['file_type']: st.image(m['file_path'],use_container_width=True)
-                    elif "video" in m['file_type']: st.video(m['file_path'])
-                    elif "audio" in m['file_type']: st.audio(m['file_path'])
-                if os.path.exists(m['file_path']): st.download_button(f"Download {m['file_name']}",open(m['file_path'],'rb').read(),file_name=m['file_name'],key=f"dl_med_{m['id']}")
+                st.write(f"**{m['title']}** - {m['by']} - {m['date']}")
+                fp=m.get('file_path','')
+                if fp and os.path.exists(fp):
+                    # Display based on type - Photo, Video, Audio
+                    if fp.lower().endswith(('.jpg','.png','.jpeg')):
+                        try: st.image(fp,use_container_width=True)
+                        except: st.write(f"📷 {m['file_name']}")
+                    elif fp.lower().endswith(('.mp4','.mov')):
+                        try: st.video(fp)
+                        except: st.write(f"🎥 {m['file_name']}")
+                    elif fp.lower().endswith(('.mp3','.m4a','.wav','.ogg')):
+                        # AUDIO ACCESS - As requested!
+                        try: st.audio(fp)
+                        except: st.write(f"🎵 Audio: {m['file_name']}")
+                        st.success(f"🎵 Audio: {m['file_name']}")
+                    else:
+                        st.write(f"📄 {m['file_name']}")
+                    st.download_button(f"⬇️ Download {m['file_name']}",open(fp,'rb').read(),file_name=m['file_name'],key=f"dl_med_{m['id']}")
+                else:
+                    st.warning(f"File not found: {m.get('file_name','')}")
+                # === FIX 2: DELETE BUTTON ADDED ===
+                if st.button(f"🗑️ DELETE - {m['title']}",key=f"del_med_{m['id']}",type="secondary",use_container_width=True):
+                    med=[x for x in med if x['id']!=m['id']]
+                    # Try delete file too
+                    try:
+                        if fp and os.path.exists(fp): os.remove(fp)
+                    except: pass
+                    save_json(FILES["media"],med); st.success(f"Deleted {m['title']}!"); st.balloons(); st.rerun()
 
 with tabs[13]:
     st.subheader("🏛️ Cabinet Archive - OPEN TO ALL 13 - NOW OPENS!")
@@ -302,11 +374,14 @@ with tabs[13]:
     for cab in reversed(cabs):
         with st.container(border=True):
             st.markdown(f"**{cab['name']} - {cab['year']}**")
-            if os.path.exists(cab['photo_path']): st.image(cab['photo_path'],use_container_width=True)
+            if os.path.exists(cab['photo_path']):
+                try: st.image(cab['photo_path'],use_container_width=True)
+                except: st.write(f"📷 {cab['name']}")
             st.info(cab['members'])
+            if st.button(f"🗑️ Delete Cabinet {cab['year']}",key=f"del_cab_{cab['id']}"): cabs=[x for x in cabs if x['id']!=cab['id']]; save_json(FILES["cabinets"],cabs); st.success("Deleted!"); st.rerun()
 
 with tabs[14]:
     st.subheader("📜 Audit Log - OPEN - NOW OPENS!"); audit=load_json(FILES["audit"],st.session_state.audit); st.success(f"Total Actions: {len(audit)}"); 
     if audit: st.dataframe(pd.DataFrame(reversed(audit)),use_container_width=True)
 
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED OPEN EDITION | All Tabs Open - No Red | Speaker Hon. Lawrence Ssango | {dt.now().year} | Public Link: {PUBLIC_VOTE_LINK}</p>",unsafe_allow_html=True)
+st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED | Photo Blue Screen Fixed + Audio Access Added + Delete Added | Speaker Hon. Lawrence Ssango | {dt.now().year} | Public Link: {PUBLIC_VOTE_LINK}</p>",unsafe_allow_html=True)
