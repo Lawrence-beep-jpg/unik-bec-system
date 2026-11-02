@@ -10,7 +10,9 @@ MAKER = "speaker"
 MAKER_NAME = "Right Hon. Speaker - Hon. Lawrence Ssango - Maker Of This Portal"
 LOCK_MSG = "🔒 LOCKED - Only The Maker, Right Hon. Speaker Hon. Lawrence Ssango, Can Make Changes / Delete / Change Settings. You Can Upload, Download, Vote, Join Calls, Submit Reports, Type And Copy Paste."
 
-# === GOOGLE MEET LINK - MAKER CHANGES THIS WHEN YOU MAKE A NEW MEETING ===
+# === GOOGLE MEET LINK - PUT YOUR REAL LINK HERE - THIS IS THE GREEN BUTTON ===
+# Make a meeting in Google Meet app, press New meeting, Start instant meeting, Copy link, paste it here.
+# Example: https://meet.google.com/qwe-rtyu-iop - Do NOT leave abc-defg-hij, that one is fake and will ask for code.
 DEFAULT_MEET_LINK = "https://meet.google.com/abc-defg-hij"
 
 FILES = {
@@ -52,20 +54,14 @@ def add_notify(title, body, sender="System"):
 
 MEET_LINK = get_meet_link()
 
-# === DIRECT TO GOOGLE MEET - NO WAITING PAGE - PRESS LINK, GO STRAIGHT TO MEET ===
-# If anyone opens ?directcall=1, it does NOT show a Portal page to wait on. It jumps straight to Google Meet at once.
-is_direct = st.query_params.get("directcall","")=="1"
-if is_direct:
-    st.components.v1.html(f"<meta http-equiv='refresh' content='0; url={MEET_LINK}'><script>window.location.href='{MEET_LINK}';</script><p style='text-align:center;font-weight:bold;'>Going straight to Google Meet... If it does not open, click below.</p><a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:10px;text-decoration:none;font-weight:bold;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW</a>", height=120)
-    st.stop()
-
 is_public = st.query_params.get("public","")=="vote"
-st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Can Upload, Download, Vote, Join Calls, Submit Reports - Only Maker Can Make Changes - Press Link, Go Straight To Google Meet, Wait There</p>",unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>Tap Green Button, Go Straight To Google Meet, Meet Direct - No Login, No Waiting</p>",unsafe_allow_html=True)
 
-# === TOP BUTTON GOES STRAIGHT TO GOOGLE MEET - NO PORTAL WAITING ===
-st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:20px;display:block;text-align:center;'>📞 JOIN GOOGLE MEET CALL NOW - CLICK HERE, GO STRAIGHT TO MEET</a>", unsafe_allow_html=True)
-st.info(f"📞 GOOGLE MEET LINK: {MEET_LINK} - Press it, you go straight to Google Meet, you wait THERE for people to join. No waiting in Portal. Share this same link in WhatsApp group.")
-st.success("✅ ALL 13 CAN: Upload, Download, Vote, Join Google Meet Calls, Submit Reports, Type, Copy Paste, Upload Microsoft Word / Excel / PowerPoint. 🔒 ONLY MAKER CAN: Delete, Approve, Change Password, Change Settings, Change Google Meet Link.")
+# === GREEN BUTTON - FIRST THING - DIRECT TO GOOGLE MEET - NO LOGIN - NO WAITING PAGE ===
+# This button IS the Meet link. No Portal page, no directcall page, no waiting.
+st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:18px 25px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:22px;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW - TAP HERE, GO STRAIGHT TO MEET, NO LOGIN</a>", unsafe_allow_html=True)
+st.info(f"📞 MEET LINK: {MEET_LINK} - Tap green button above, you go straight to Google Meet. Share this same link in WhatsApp group. Maker must be inside Meet first, Quick Access ON, then everyone joins direct, no accept.")
+st.success("✅ ALL 13 CAN: Upload, Download, Vote, Join Google Meet Direct, Submit Reports, Type, Copy Paste, Upload Microsoft Word / Excel / PowerPoint. 🔒 ONLY MAKER CAN: Delete, Approve, Change Password, Change Settings, Change Google Meet Link.")
 st.error("🔒 ALL RIGHTS RESERVED TO THE MAKER: Right Hon. Speaker Hon. Lawrence Ssango. Everything Stays As Maker Said.")
 
 st.components.v1.html("<button onclick=\"if('Notification' in window){Notification.requestPermission().then(p=>{if(p==='granted'){new Notification('UNIK BEC Notifications ON',{body:'You will now receive notifications!'});alert('Notifications ON!');}else{alert('Please Allow notifications');}})}else{alert('Notifications not supported');}\" style='background:#1a5c2a;color:white;padding:10px 20px;border-radius:8px;font-weight:bold;width:100%;border:none;cursor:pointer;'>🔔 CLICK HERE - ENABLE PHONE / LAPTOP NOTIFICATIONS</button>", height=50)
@@ -154,8 +150,8 @@ if not st.session_state.logged_in:
     st.markdown(f"### 🗳️ PUBLIC VOTE FOR ALL STUDENTS\n**Link:** {PUBLIC_VOTE_LINK}")
     st.markdown(f"<a href='{PUBLIC_VOTE_LINK}' target='_blank' style='background:#1a5c2a;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;'>🗳️ CLICK HERE - STUDENT VOTING - NO LOGIN</a>", unsafe_allow_html=True)
     st.divider()
-    st.markdown("### 🔐 Cabinet Login - 13 Departments - Only if you want Portal, NOT for Google Meet call")
-    st.info("Google Meet call above needs NO login. It goes straight to Meet. Login below is only for Portal documents.")
+    st.markdown("### 🔐 Cabinet Login - 13 Departments - Only if you want Portal documents, NOT for Google Meet call")
+    st.info("Google Meet call above needs NO login. Tap green button, go straight to Meet.")
     u=st.selectbox("Select Office (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
     p=st.text_input("Password - My Portal",type="password",key="pass")
     if st.button("LOGIN TO PORTAL",type="primary",use_container_width=True):
@@ -186,12 +182,12 @@ if st.sidebar.button("🚪 Logout",use_container_width=True): st.session_state.l
 
 reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FILES["media"],st.session_state.media); candidates=load_json(FILES["candidates"],st.session_state.candidates); votes=load_json(FILES["votes"],st.session_state.votes); docs_uploaded=load_json(FILES["uploaded"],st.session_state.uploaded)
 
-tabs=st.tabs(["📊 Dashboard","👤 My Personal Portal","📢 Public Portal OPEN","🎥 Meeting - GOOGLE MEET","📝 Submit Report","🔒 Private SUPER 4","🗳️ Electoral OPEN","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN","📄 Documents OPEN","📸 Media Gallery OPEN","🏛️ Cabinet Archive OPEN","📜 Audit Log"])
+tabs=st.tabs(["📊 Dashboard","👤 My Personal Portal","📢 Public Portal OPEN","🎥 Meeting - GOOGLE MEET DIRECT","📝 Submit Report","🔒 Private SUPER 4","🗳️ Electoral OPEN","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN","📄 Documents OPEN","📸 Media Gallery OPEN","🏛️ Cabinet Archive OPEN","📜 Audit Log"])
 
 with tabs[0]:
     st.subheader(f"📊 Dashboard - {user_full}"); c1,c2,c3,c4=st.columns(4)
     c1.metric("Reports",len(reports)); c2.metric("Media",len(media)); c3.metric("Docs",len(docs_uploaded)); c4.metric("Votes",len(votes))
-    st.success("✅ Google Meet Calls - Press Link, Go Straight To Meet, Wait There")
+    st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:8px;text-decoration:none;font-weight:bold;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW - STRAIGHT, NO LOGIN</a>", unsafe_allow_html=True)
     for _n in reversed(load_json(FILES["notif"], [])[-10:]): st.info(f"🔔 **{_n['title']}** - {_n['body']} | {_n['date']}")
 
 with tabs[1]:
@@ -232,10 +228,10 @@ with tabs[2]:
                 if ann.get('file_path','').endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(ann['file_path'])
 
 with tabs[3]:
-    st.subheader("🎥 Meeting - GOOGLE MEET - Press Link, Go Straight To Meet, Wait There")
-    st.warning("NO WAITING IN PORTAL: Press the green button, you go straight to Google Meet, you wait THERE in Google Meet for people to join. 2 people only is fine.")
+    st.subheader("🎥 Meeting - GOOGLE MEET DIRECT - Tap, Join Direct, No Accept")
+    st.warning("HOW TO JOIN DIRECT, NO WAITING: Maker enters Meet FIRST, turns Quick Access ON, stays inside waiting. Others tap green button, Google Meet opens, press Join, you meet direct. 2 people only is fine.")
     st.success(f"Current Google Meet Link: {MEET_LINK}")
-    st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:18px;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW - GO STRAIGHT TO MEET, WAIT THERE</a>", unsafe_allow_html=True)
+    st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:18px 25px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:20px;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW - TAP HERE, GO STRAIGHT TO MEET</a>", unsafe_allow_html=True)
     st.info("Copy this link and send in WhatsApp group:")
     st.code(MEET_LINK)
     if CAN_CHANGE:
@@ -245,10 +241,10 @@ with tabs[3]:
             if "meet.google.com" not in new_link: st.error("That is not a Google Meet link! Must start with https://meet.google.com/")
             else:
                 save_json(FILES["meetlink"], {"link": new_link.strip(), "by": user_full, "date": str(dt.now())})
-                add_notify("Google Meet Link Updated", f"New Google Meet link by {user_full}. Join now!", user_full)
-                st.success("Saved! All will now go straight to this new Google Meet link!"); st.balloons(); st.rerun()
+                add_notify("Google Meet Link Updated", f"New Google Meet link by {user_full}. Tap green button, join direct!", user_full)
+                st.success("Saved! Green button now goes straight to this new Google Meet link!"); st.balloons(); st.rerun()
     else:
-        st.error(LOCK_MSG + " Only Maker can change the Google Meet link. You can only JOIN, straight to Meet.")
+        st.error(LOCK_MSG + " Only Maker can change the Google Meet link. You can only TAP and JOIN direct.")
 
 with tabs[4]:
     st.subheader("📝 Submit Report - OPEN - ALL CAN SUBMIT!")
@@ -433,4 +429,4 @@ with tabs[14]:
     st.subheader("📜 Audit Log - OPEN!"); audit=load_json(FILES["audit"],st.session_state.audit)
     if audit: st.dataframe(pd.DataFrame(reversed(audit)),use_container_width=True)
 
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED | Press Link, Go Straight To Google Meet, Wait There | Only Maker Can Delete / Change Settings | 🔒 All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year} | Google Meet: {MEET_LINK}</p>",unsafe_allow_html=True)
+st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED | Tap Green Button, Go Straight To Google Meet, Meet Direct, No Login, No Waiting | Only Maker Can Delete / Change Settings | 🔒 All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year} | Google Meet: {MEET_LINK}</p>",unsafe_allow_html=True)
