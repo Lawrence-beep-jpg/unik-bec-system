@@ -10,13 +10,16 @@ MAKER = "speaker"
 MAKER_NAME = "Right Hon. Speaker - Hon. Lawrence Ssango - Maker Of This Portal"
 LOCK_MSG = "🔒 LOCKED - Only The Maker, Right Hon. Speaker Hon. Lawrence Ssango, Can Make Changes / Delete / Change Settings. You Can Upload, Download, Vote, Join Calls, Submit Reports, Type And Copy Paste."
 
+# === GOOGLE MEET LINK - MAKER CHANGES THIS WHEN YOU MAKE A NEW MEETING ===
+DEFAULT_MEET_LINK = "https://meet.google.com/abc-defg-hij"
+
 FILES = {
     "reports": "data/reports.json", "media": "data/media.json", "candidates": "data/candidates.json",
     "pending": "data/pending.json", "votes": "data/votes.json", "cabinets": "data/cabinets.json",
     "docs": "data/docs.json", "finance": "data/finance.json", "disc": "data/disc.json", "gp": "data/gp.json",
     "passwords": "data/passwords.json", "uploaded": "data/uploaded_docs.json", "ann": "data/announcements.json",
     "meet": "data/meetings.json", "personal": "data/personal.json", "audit": "data/audit.json",
-    "notif": "data/notifications.json"
+    "notif": "data/notifications.json", "meetlink": "data/meet_link.json"
 }
 
 def load_json(p,d):
@@ -27,6 +30,11 @@ def load_json(p,d):
     return d
 def save_json(p,data):
     with open(p,'w') as f: json.dump(data,f,default=str,indent=2)
+
+def get_meet_link():
+    d = load_json(FILES["meetlink"], {})
+    link = d.get("link","") if isinstance(d, dict) else ""
+    return link.strip() if link else DEFAULT_MEET_LINK
 
 def push_notify(title, body):
     st.toast(f"🔔 {title}: {body}", icon="🔔")
@@ -42,45 +50,28 @@ def add_notify(title, body, sender="System"):
     except: pass
     push_notify(title, body)
 
-def ringtone_html():
-    return """
-    <div style="background:#ff0000;color:white;padding:15px;border-radius:10px;text-align:center;font-weight:bold;font-size:18px;">📞📞 RINGING... INCOMING GROUP CALL... RINGING... 📞📞<br>Click JOIN / ANSWER below to stop ringing!</div>
-    <audio autoplay loop controls style="width:100%;margin-top:10px;">
-      <source src="https://www.soundjay.com/phone/telephone-ring-01a.mp3" type="audio/mpeg">
-      <source src="https://actions.google.com/sounds/v1/alarms/phone_ring.ogg" type="audio/ogg">
-    </audio>
-    """
+MEET_LINK = get_meet_link()
 
-# === DIRECT CALL - NO LOGIN - NO SAVE - ADDED ONLY HERE ===
-# This is direct. No login, no password, nothing saved. Fresh every time.
+# === DIRECT TO GOOGLE MEET - NO WAITING PAGE - PRESS LINK, GO STRAIGHT TO MEET ===
+# If anyone opens ?directcall=1, it does NOT show a Portal page to wait on. It jumps straight to Google Meet at once.
 is_direct = st.query_params.get("directcall","")=="1"
 if is_direct:
-    st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>📞 DIRECT CALL - NO LOGIN - NO SAVE</h2><p style='text-align:center;'>Press CALL NOW, allow camera + mic, talk. When you close, nothing is saved. No old meeting will show.</p>",unsafe_allow_html=True)
-    st.components.v1.html(ringtone_html(), height=120)
-    room = st.query_params.get("room","UNIK-BEC-DIRECT")
-    st.success(f"Direct Room: {room} - Share this same link to the person you want to call, they press same button, you will see each other. 2 people only is fine!")
-    # One room for today, so you and the other person meet in same place, no saving
-    direct_room = f"UNIK-BEC-DIRECT-{dt.now().strftime('%Y%m%d')}"
-    st.markdown(f"<a href='https://meet.jit.si/{direct_room}' target='_blank' style='background:#25D366;color:white;padding:15px 25px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:18px;'>📞 CALL NOW DIRECT - VIDEO + AUDIO - NO LOGIN</a>", unsafe_allow_html=True)
-    st.components.v1.html(f"<iframe src='https://meet.jit.si/{direct_room}' style='width:100%;height:600px;border:0;' allow='camera; microphone; fullscreen'></iframe>",height=650)
-    if st.button("⬅️ BACK TO PORTAL - NO SAVE", use_container_width=True):
-        st.query_params.clear(); st.rerun()
+    st.components.v1.html(f"<meta http-equiv='refresh' content='0; url={MEET_LINK}'><script>window.location.href='{MEET_LINK}';</script><p style='text-align:center;font-weight:bold;'>Going straight to Google Meet... If it does not open, click below.</p><a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:10px;text-decoration:none;font-weight:bold;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW</a>", height=120)
     st.stop()
 
 is_public = st.query_params.get("public","")=="vote"
-st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Can Upload, Download, Vote, Join Calls, Submit Reports - Only Maker Can Make Changes / Delete / Change Settings</p>",unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;color:#1a5c2a;'>🏛️ UNIK BEC UNASNM<br>Governance Portal - 800+ FIXED OPEN EDITION</h2><p style='text-align:center;'>All Can Upload, Download, Vote, Join Calls, Submit Reports - Only Maker Can Make Changes - Press Link, Go Straight To Google Meet, Wait There</p>",unsafe_allow_html=True)
 
-# === DIRECT CALL BUTTON AT TOP - BEFORE LOGIN - NO DISTURBING LOGIN ===
-DIRECT_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?directcall=1"
-st.markdown(f"<a href='{DIRECT_LINK}' target='_blank' style='background:#ff0000;color:white;padding:15px 25px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:20px;display:block;text-align:center;'>📞 CALL NOW DIRECT - NO LOGIN - NO PASSWORD - NO SAVE - CLICK HERE</a>", unsafe_allow_html=True)
-st.info(f"📞 DIRECT CALL LINK - Share this to anyone you want to call: {DIRECT_LINK} - They click it, no login, they join you direct. Nothing saved after.")
-st.success("✅ ALL 13 CAN: Upload, Download, Vote, Join Calls, Submit Reports, Type, Copy Paste, Upload Microsoft Word / Excel / PowerPoint. 🔒 ONLY MAKER CAN: Delete, Approve, Change Password, Change Settings.")
-st.error("🔒 ALL RIGHTS RESERVED TO THE MAKER: Right Hon. Speaker Hon. Lawrence Ssango. Everything Stays As Maker Said. No One Can Change Anything.")
+# === TOP BUTTON GOES STRAIGHT TO GOOGLE MEET - NO PORTAL WAITING ===
+st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:20px;display:block;text-align:center;'>📞 JOIN GOOGLE MEET CALL NOW - CLICK HERE, GO STRAIGHT TO MEET</a>", unsafe_allow_html=True)
+st.info(f"📞 GOOGLE MEET LINK: {MEET_LINK} - Press it, you go straight to Google Meet, you wait THERE for people to join. No waiting in Portal. Share this same link in WhatsApp group.")
+st.success("✅ ALL 13 CAN: Upload, Download, Vote, Join Google Meet Calls, Submit Reports, Type, Copy Paste, Upload Microsoft Word / Excel / PowerPoint. 🔒 ONLY MAKER CAN: Delete, Approve, Change Password, Change Settings, Change Google Meet Link.")
+st.error("🔒 ALL RIGHTS RESERVED TO THE MAKER: Right Hon. Speaker Hon. Lawrence Ssango. Everything Stays As Maker Said.")
 
-st.components.v1.html("<button onclick=\"if('Notification' in window){Notification.requestPermission().then(p=>{if(p==='granted'){new Notification('UNIK BEC Notifications ON',{body:'You will now receive notifications!'});alert('Notifications ON! Now click anywhere once to allow RINGTONE sound!');}else{alert('Please Allow notifications');}})}else{alert('Notifications not supported');}\" style='background:#1a5c2a;color:white;padding:10px 20px;border-radius:8px;font-weight:bold;width:100%;border:none;cursor:pointer;'>🔔 CLICK HERE - ENABLE PHONE / LAPTOP NOTIFICATIONS + RINGTONE</button>", height=50)
+st.components.v1.html("<button onclick=\"if('Notification' in window){Notification.requestPermission().then(p=>{if(p==='granted'){new Notification('UNIK BEC Notifications ON',{body:'You will now receive notifications!'});alert('Notifications ON!');}else{alert('Please Allow notifications');}})}else{alert('Notifications not supported');}\" style='background:#1a5c2a;color:white;padding:10px 20px;border-radius:8px;font-weight:bold;width:100%;border:none;cursor:pointer;'>🔔 CLICK HERE - ENABLE PHONE / LAPTOP NOTIFICATIONS</button>", height=50)
 
 PUBLIC_VOTE_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
-st.info(f"🗳️ PUBLIC STUDENT VOTING LINK (Share to all students): {PUBLIC_VOTE_LINK}")
+st.info(f"🗳️ PUBLIC STUDENT VOTING LINK: {PUBLIC_VOTE_LINK}")
 
 USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker - Hon. Lawrence Ssango","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
 LOGIN_USERS=list(USERS.keys())
@@ -112,7 +103,7 @@ if is_public:
                 nid=len(st.session_state.pending)+len(st.session_state.candidates)+1
                 fpath=f"data/media_files/cand_{nid}.jpg"; open(fpath,'wb').write(rphoto.getvalue())
                 st.session_state.pending.append({"id":nid,"position":rp,"name":rn,"class":rclass,"email":remail,"reason":rreason,"photo_path":fpath,"date":str(dt.now())[:16]})
-                save_json(FILES["pending"],st.session_state.pending); add_notify("New Candidate Applied", f"{rn} applied for {USERS[rp]}. Speaker please approve.", rn); st.success("Sent to Speaker! Photo saved!"); st.balloons()
+                save_json(FILES["pending"],st.session_state.pending); add_notify("New Candidate Applied", f"{rn} applied for {USERS[rp]}", rn); st.success("Sent to Speaker!"); st.balloons()
     with t2:
         voter_email=st.text_input("University Email *",key="pub_voter_email")
         if voter_email and "@" in voter_email:
@@ -126,18 +117,13 @@ if is_public:
                     with st.container(border=True):
                         col1,col2=st.columns([1,3])
                         try:
-                            if c.get('photo_path','') and os.path.exists(c.get('photo_path','')):
-                                col1.image(c.get('photo_path',''),width=140,caption=c['name'])
-                            else:
-                                col1.warning(f"No photo for {c['name']}")
-                                col1.write(f"📷 {c['name']}")
-                        except Exception as e:
-                            col1.error(f"Photo error: {c['name']}")
-                            col1.write(f"📷 {c['name']}")
+                            if c.get('photo_path','') and os.path.exists(c.get('photo_path','')): col1.image(c.get('photo_path',''),width=140,caption=c['name'])
+                            else: col1.write(f"📷 {c['name']}")
+                        except: col1.write(f"📷 {c['name']}")
                         col2.write(f"**{c['name']}** - {c.get('class','')}"); col2.info(c.get('reason','No reason given'))
                         if col2.button(f"VOTE {c['name']}",key=f"pv_{c['id']}_{voter_email}",type="primary",use_container_width=True):
                             st.session_state.votes.append({"candidate_id":c['id'],"voter_email":voter_email.lower(),"position":vp,"candidate_name":c['name'],"date":str(dt.now())})
-                            save_json(FILES["votes"],st.session_state.votes); add_notify("New Vote Cast", f"A vote was cast for {c['name']} - {USERS[vp]}", "Electoral"); st.success(f"Voted {c['name']}!"); st.balloons(); st.rerun()
+                            save_json(FILES["votes"],st.session_state.votes); st.success(f"Voted {c['name']}!"); st.balloons(); st.rerun()
         else: st.warning("Enter valid university email to vote")
     with t3:
         votes=load_json(FILES["votes"],st.session_state.votes); st.success(f"Total Votes: {len(votes)}")
@@ -155,17 +141,10 @@ if is_public:
                     r1,r2,r3,r4,r5=st.columns([0.6,1.2,2,1.5,1])
                     r1.markdown(f"**{num}**")
                     try:
-                        if cc.get('photo_path','') and os.path.exists(cc.get('photo_path','')):
-                            r2.image(cc.get('photo_path',''),width=80)
-                        else:
-                            r2.write(f"📷 {cc['name']}")
-                    except:
-                        r2.write(f"📷 {cc['name']}")
-                    r3.markdown(f"**{cc['name']}**")
-                    r3.write(cc.get('class',''))
-                    r4.write(USERS[pos])
-                    r5.markdown(f"**{vcount}**")
-                    if vcount>0: r5.success(f"{vcount} votes")
+                        if cc.get('photo_path','') and os.path.exists(cc.get('photo_path','')): r2.image(cc.get('photo_path',''),width=80)
+                        else: r2.write(f"📷 {cc['name']}")
+                    except: r2.write(f"📷 {cc['name']}")
+                    r3.markdown(f"**{cc['name']}**"); r3.write(cc.get('class','')); r4.write(USERS[pos]); r5.markdown(f"**{vcount}**")
                     st.divider()
                 rd=[{"Candidate":cc['name'],"Votes":len([v for v in votes if v['candidate_id']==cc['id']])} for cc in cs]
                 if sum([x['Votes'] for x in rd])>0: st.bar_chart(pd.DataFrame(rd).set_index("Candidate"))
@@ -175,8 +154,8 @@ if not st.session_state.logged_in:
     st.markdown(f"### 🗳️ PUBLIC VOTE FOR ALL STUDENTS\n**Link:** {PUBLIC_VOTE_LINK}")
     st.markdown(f"<a href='{PUBLIC_VOTE_LINK}' target='_blank' style='background:#1a5c2a;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;'>🗳️ CLICK HERE - STUDENT VOTING - NO LOGIN</a>", unsafe_allow_html=True)
     st.divider()
-    st.markdown("### 🔐 Cabinet Login - 13 Departments - UNIK BEC - Only if you want Portal, NOT for direct call")
-    st.info("Direct call above needs NO login. Login below is only for Portal documents.")
+    st.markdown("### 🔐 Cabinet Login - 13 Departments - Only if you want Portal, NOT for Google Meet call")
+    st.info("Google Meet call above needs NO login. It goes straight to Meet. Login below is only for Portal documents.")
     u=st.selectbox("Select Office (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
     p=st.text_input("Password - My Portal",type="password",key="pass")
     if st.button("LOGIN TO PORTAL",type="primary",use_container_width=True):
@@ -188,16 +167,14 @@ if not st.session_state.logged_in:
 user=st.session_state.user; user_full=USERS[user]
 CAN_CHANGE = (user == MAKER)
 st.sidebar.title(user_full); st.sidebar.success(f"Logged: {user_full}")
-if CAN_CHANGE:
-    st.sidebar.success("🔓 MAKER MODE: You Can Make Changes - Hon. Lawrence Ssango")
+if CAN_CHANGE: st.sidebar.success("🔓 MAKER MODE: You Can Make Changes - Hon. Lawrence Ssango")
 else:
     st.sidebar.success("✅ YOU CAN: Upload, Download, Vote, Join Calls, Submit Reports, Type, Copy Paste")
     st.sidebar.error("🔒 Delete / Change Settings: Maker Only")
-st.sidebar.markdown(f"[📞 DIRECT CALL - NO LOGIN]({DIRECT_LINK})")
+st.sidebar.markdown(f"[📞 JOIN GOOGLE MEET - GO STRAIGHT]({MEET_LINK})")
 notifs_now = load_json(FILES["notif"], [])
 st.sidebar.markdown(f"### 🔔 Notifications: {len(notifs_now)}")
-for _n in reversed(notifs_now[-5:]):
-    st.sidebar.info(f"🔔 {_n['title']} - {_n['body'][:60]} | {_n['date']}")
+for _n in reversed(notifs_now[-5:]): st.sidebar.info(f"🔔 {_n['title']} - {_n['body'][:60]} | {_n['date']}")
 if CAN_CHANGE:
     with st.sidebar.expander("🔑 Change My Password - Maker Only"):
         cur=st.text_input("Current",type="password",key="cur_pw"); new=st.text_input("New",type="password",key="new_pw"); conf=st.text_input("Confirm",type="password",key="conf_pw")
@@ -205,31 +182,22 @@ if CAN_CHANGE:
             if cur!=st.session_state.passwords.get(user,"unik2025"): st.sidebar.error("Wrong current")
             elif new!=conf: st.sidebar.error("Don't match")
             else: st.session_state.passwords[user]=new; save_json(FILES["passwords"],st.session_state.passwords); st.sidebar.success(f"Changed! New: {new}")
-else:
-    st.sidebar.error("🔒 Password Change Locked - Maker Only.")
 if st.sidebar.button("🚪 Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
-
-# === NO SAVED MEETING SHOWING - DIRECT ONLY INSIDE PORTAL TOO ===
-# Old saved meetings are NOT shown now. Only fresh direct call box.
-st.success("📞 DIRECT CALL INSIDE PORTAL TOO - No old meeting saved / showing!")
-direct_room2 = f"UNIK-BEC-DIRECT-{dt.now().strftime('%Y%m%d')}"
-st.markdown(f"<a href='https://meet.jit.si/{direct_room2}' target='_blank' style='background:#25D366;color:white;padding:12px 25px;border-radius:8px;text-decoration:none;font-weight:bold;'>📞 CALL NOW DIRECT - NO SAVE</a>", unsafe_allow_html=True)
 
 reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FILES["media"],st.session_state.media); candidates=load_json(FILES["candidates"],st.session_state.candidates); votes=load_json(FILES["votes"],st.session_state.votes); docs_uploaded=load_json(FILES["uploaded"],st.session_state.uploaded)
 
-tabs=st.tabs(["📊 Dashboard","👤 My Personal Portal","📢 Public Portal OPEN","🎥 Meeting OPEN - DIRECT","📝 Submit Report","🔒 Private SUPER 4","🗳️ Electoral OPEN","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN","📄 Documents OPEN","📸 Media Gallery OPEN - AUDIO + DELETE","🏛️ Cabinet Archive OPEN","📜 Audit Log"])
+tabs=st.tabs(["📊 Dashboard","👤 My Personal Portal","📢 Public Portal OPEN","🎥 Meeting - GOOGLE MEET","📝 Submit Report","🔒 Private SUPER 4","🗳️ Electoral OPEN","⚖️ Disciplinary OPEN","📋 GP OPEN","💰 Finance 5 ONLY","🔐 Secret OPEN","📄 Documents OPEN","📸 Media Gallery OPEN","🏛️ Cabinet Archive OPEN","📜 Audit Log"])
 
 with tabs[0]:
     st.subheader(f"📊 Dashboard - {user_full}"); c1,c2,c3,c4=st.columns(4)
     c1.metric("Reports",len(reports)); c2.metric("Media",len(media)); c3.metric("Docs",len(docs_uploaded)); c4.metric("Votes",len(votes))
-    st.success("✅ All Can Upload / Download / Vote / Join / Submit - Only Maker Can Delete / Change Settings - Direct Call, No Save!")
-    for _n in reversed(load_json(FILES["notif"], [])[-10:]):
-        st.info(f"🔔 **{_n['title']}** - {_n['body']} | From: {_n.get('from','')} | {_n['date']}")
+    st.success("✅ Google Meet Calls - Press Link, Go Straight To Meet, Wait There")
+    for _n in reversed(load_json(FILES["notif"], [])[-10:]): st.info(f"🔔 **{_n['title']}** - {_n['body']} | {_n['date']}")
 
 with tabs[1]:
     st.subheader(f"👤 My Personal Portal - ONLY YOU - {user_full}")
     personal=load_json(FILES["personal"],st.session_state.personal); my_personal=[p for p in personal if p['owner']==user]
-    pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes * - You can type and copy paste here",key="pers_c"); pf=st.file_uploader("File - ONLY YOU",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","jpeg","mp4","mp3","m4a","wav","ogg"],key="pers_f")
+    pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes *",key="pers_c"); pf=st.file_uploader("File - ONLY YOU",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","jpeg","mp4","mp3","m4a","wav","ogg"],key="pers_f")
     if st.button("Save To My Personal Portal - PRIVATE",type="primary",use_container_width=True,key="pers_s"):
         fpath=""; fname=""
         if pf: fname=pf.name.replace(" ","_"); fpath=f"data/personal/{user}_{len(personal)+1}_{fname}"; open(fpath,'wb').write(pf.getvalue())
@@ -250,12 +218,12 @@ with tabs[1]:
 with tabs[2]:
     st.subheader("📢 Public Portal - OPEN TO ALL 13 - ALL CAN POST!")
     anns=load_json(FILES["ann"],st.session_state.ann)
-    at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message * - Type / Copy Paste Here",key="ann_c"); af=st.file_uploader("Attach File",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","mp3","m4a","wav"],key="ann_f")
-    if st.button("📢 BROADCAST TO ALL 13 - ALL CAN DO THIS",type="primary",use_container_width=True):
+    at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message *",key="ann_c"); af=st.file_uploader("Attach File",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","jpg","png","mp3","m4a","wav"],key="ann_f")
+    if st.button("📢 BROADCAST TO ALL 13",type="primary",use_container_width=True):
         fpath=""; fname=""
         if af: fname=af.name.replace(" ","_"); fpath=f"data/documents/ann_{len(anns)+1}_{fname}"; open(fpath,'wb').write(af.getvalue())
         anns.append({"id":len(anns)+1,"title":at.strip(),"content":acont.strip(),"file_name":fname,"file_path":fpath,"from":user,"from_name":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
-        save_json(FILES["ann"],anns); add_notify("New Public Message", f"{at.strip()} - {acont.strip()[:80]}", user_full); st.success("Broadcasted to ALL 13!"); st.balloons(); st.rerun()
+        save_json(FILES["ann"],anns); add_notify("New Public Message", f"{at.strip()} - {acont.strip()[:80]}", user_full); st.success("Broadcasted!"); st.balloons(); st.rerun()
     for ann in reversed(anns):
         with st.container(border=True):
             st.markdown(f"**{ann['title']}** | {ann['from_name']} | {ann['date']}"); st.info(ann['content'])
@@ -264,29 +232,40 @@ with tabs[2]:
                 if ann.get('file_path','').endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(ann['file_path'])
 
 with tabs[3]:
-    st.subheader("🎥 Meeting - DIRECT CALL - NO SAVE - NO OLD MEETING!")
-    st.warning("DIRECT: Press CALL NOW below, allow camera + mic, talk. Nothing saved. 2 people only is fine. Share DIRECT LINK to the person.")
-    st.markdown(f"Direct Link to share: {DIRECT_LINK}")
-    st.components.v1.html(f"<iframe src='https://meet.jit.si/{direct_room2}' style='width:100%;height:600px;border:0;' allow='camera; microphone; fullscreen'></iframe>",height=650)
-    st.markdown(f"<a href='https://meet.jit.si/{direct_room2}' target='_blank' style='background:#25D366;color:white;padding:15px 25px;border-radius:8px;text-decoration:none;font-weight:bold;'>📞 CALL NOW DIRECT - OPEN FULL SCREEN</a>", unsafe_allow_html=True)
+    st.subheader("🎥 Meeting - GOOGLE MEET - Press Link, Go Straight To Meet, Wait There")
+    st.warning("NO WAITING IN PORTAL: Press the green button, you go straight to Google Meet, you wait THERE in Google Meet for people to join. 2 people only is fine.")
+    st.success(f"Current Google Meet Link: {MEET_LINK}")
+    st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#00832d;color:white;padding:15px 25px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:18px;display:block;text-align:center;'>📞 JOIN GOOGLE MEET NOW - GO STRAIGHT TO MEET, WAIT THERE</a>", unsafe_allow_html=True)
+    st.info("Copy this link and send in WhatsApp group:")
+    st.code(MEET_LINK)
+    if CAN_CHANGE:
+        st.divider(); st.markdown("**🔓 MAKER ONLY - Change Google Meet Link:**")
+        new_link=st.text_input("Paste NEW Google Meet Link here * - e.g. https://meet.google.com/xxx-yyyy-zzz", value=MEET_LINK, key="new_meet_link")
+        if st.button("💾 SAVE GOOGLE MEET LINK - MAKER ONLY", type="primary", use_container_width=True):
+            if "meet.google.com" not in new_link: st.error("That is not a Google Meet link! Must start with https://meet.google.com/")
+            else:
+                save_json(FILES["meetlink"], {"link": new_link.strip(), "by": user_full, "date": str(dt.now())})
+                add_notify("Google Meet Link Updated", f"New Google Meet link by {user_full}. Join now!", user_full)
+                st.success("Saved! All will now go straight to this new Google Meet link!"); st.balloons(); st.rerun()
+    else:
+        st.error(LOCK_MSG + " Only Maker can change the Google Meet link. You can only JOIN, straight to Meet.")
 
 with tabs[4]:
     st.subheader("📝 Submit Report - OPEN - ALL CAN SUBMIT!")
-    rt=st.selectbox("Report Type",REPORT_TYPES,key="rt"); rtitle=st.text_input("Title *",key="rtitle"); rcontent=st.text_area("Details * - Type / Copy Paste Here",key="rcontent")
-    if st.button("📤 Submit Report - ALL CAN DO THIS",type="primary",use_container_width=True):
+    rt=st.selectbox("Report Type",REPORT_TYPES,key="rt"); rtitle=st.text_input("Title *",key="rtitle"); rcontent=st.text_area("Details *",key="rcontent")
+    if st.button("📤 Submit Report",type="primary",use_container_width=True):
         reports.append({"id":len(reports)+1,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip()})
-        save_json(FILES["reports"],reports); add_notify("New Report Submitted", f"{rtitle.strip()} - {rt} by {user_full}", user_full); st.success("Saved! SUPER 4 will see!"); st.balloons()
+        save_json(FILES["reports"],reports); add_notify("New Report Submitted", f"{rtitle.strip()} by {user_full}", user_full); st.success("Saved!"); st.balloons()
 
 with tabs[5]:
-    st.subheader("🔒 Private Portal - SUPER 4 ONLY - REMAINS AS YOU SAID!")
+    st.subheader("🔒 Private Portal - SUPER 4 ONLY")
     if user in SUPER_4:
         reports_data=load_json(FILES["reports"],st.session_state.reports)
         ftype=st.selectbox("Filter", ["All"]+REPORT_TYPES, key="filter_type")
         filtered=reports_data if ftype=="All" else [r for r in reports_data if r['type']==ftype]
         for r in reversed(filtered):
             with st.expander(f"#{r['id']} {r['title']} - {r['from_name']} - {r['date']}"): st.info(r['content'])
-    else:
-        st.error(f"🚫 RESTRICTED: Private is SUPER 4 ONLY. You are {user_full}")
+    else: st.error(f"🚫 RESTRICTED: Private is SUPER 4 ONLY. You are {user_full}")
 
 with tabs[6]:
     st.subheader("🗳️ Electoral - OPEN TO ALL 13 - PHOTO FIXED!")
@@ -309,7 +288,7 @@ with tabs[6]:
         if not CAN_CHANGE: st.error(LOCK_MSG)
         else:
             rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="cand_pos"); rn=st.text_input("Names *",key="cand_name"); rphoto=st.file_uploader("Photo * JPG/PNG",type=["jpg","png","jpeg"],key="cand_photo")
-            if st.button("Register Candidate - Photo Fixed! - MAKER ONLY",type="primary"):
+            if st.button("Register Candidate - MAKER ONLY",type="primary"):
                 if not rn or not rphoto: st.error("Names + Photo required")
                 else:
                     nid=len(cand)+len(pend)+1; fpath=f"data/media_files/cand_{nid}.jpg"; open(fpath,'wb').write(rphoto.getvalue())
@@ -337,31 +316,31 @@ with tabs[6]:
                     st.divider()
 
 with tabs[7]:
-    st.subheader("⚖️ Disciplinary - OPEN TO ALL 13 - ALL CAN POST!")
+    st.subheader("⚖️ Disciplinary - ALL CAN POST!")
     disc=load_json(FILES["disc"],st.session_state.disc)
     d_t=st.text_input("Case Title *",key="disc_t"); d_c=st.text_area("Details *",key="disc_c")
-    if st.button("Save Disciplinary - ALL CAN DO THIS",type="primary",key="disc_s"): disc.append({"id":len(disc)+1,"title":d_t.strip(),"content":d_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["disc"],disc); st.success("Saved!"); st.rerun()
+    if st.button("Save Disciplinary",type="primary",key="disc_s"): disc.append({"id":len(disc)+1,"title":d_t.strip(),"content":d_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["disc"],disc); st.success("Saved!"); st.rerun()
     for dr in reversed(disc):
         with st.container(border=True):
             st.write(f"**{dr['title']}** - {dr['by']}"); st.info(dr['content'])
             if CAN_CHANGE and st.button(f"🗑️ Delete #{dr['id']} - Maker Only",key=f"del_disc_{dr['id']}"): disc=[x for x in disc if x['id']!=dr['id']]; save_json(FILES["disc"],disc); st.success("Deleted!"); st.rerun()
 
 with tabs[8]:
-    st.subheader("📋 GP - OPEN TO ALL 13 - ALL CAN POST!")
+    st.subheader("📋 GP - ALL CAN POST!")
     gp=load_json(FILES["gp"],st.session_state.gp)
     gp_t=st.text_input("GP Title *",key="gp_t"); gp_c=st.text_area("GP Details *",key="gp_c")
-    if st.button("Save GP - ALL CAN DO THIS",type="primary",key="gp_s"): gp.append({"id":len(gp)+1,"title":gp_t.strip(),"content":gp_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["gp"],gp); st.success("Saved!"); st.rerun()
+    if st.button("Save GP",type="primary",key="gp_s"): gp.append({"id":len(gp)+1,"title":gp_t.strip(),"content":gp_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["gp"],gp); st.success("Saved!"); st.rerun()
     for gpr in reversed(gp):
         with st.container(border=True):
             st.write(f"**{gpr['title']}** - {gpr['by']}"); st.info(gpr['content'])
             if CAN_CHANGE and st.button(f"🗑️ Delete {gpr['title']} - Maker Only",key=f"del_gp_{gpr['id']}"): gp=[x for x in gp if x['id']!=gpr['id']]; save_json(FILES["gp"],gp); st.success("Deleted!"); st.rerun()
 
 with tabs[9]:
-    st.subheader("💰 Finance - 5 ONLY - REMAINS AS YOU SAID!")
+    st.subheader("💰 Finance - 5 ONLY")
     if user in FINANCE_5:
         fin=load_json(FILES["finance"],st.session_state.finance)
         f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload Excel / PPT / PDF / Audio",type=["xlsx","xls","pptx","ppt","pdf","docx","doc","mp3","m4a","wav","ogg"],key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
-        if st.button("Save Finance - FINANCE 5 CAN DO THIS",type="primary",key="fin_s2"):
+        if st.button("Save Finance",type="primary",key="fin_s2"):
             fname=""; fpath=""
             if f_f: fname=f_f.name.replace(" ","_"); fpath=f"data/documents/finance_{len(fin)+1}_{fname}"; open(fpath,'wb').write(f_f.getvalue())
             fin.append({"id":len(fin)+1,"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"],fin); st.success("Saved!"); st.rerun()
@@ -372,23 +351,22 @@ with tabs[9]:
                     if fd['file_path'].endswith(('.mp3','.m4a','.wav','.ogg')): st.audio(fd['file_path'])
                     st.download_button(f"Download {fd['file_name']}",open(fd['file_path'],'rb').read(),file_name=fd['file_name'],key=f"dl_fin_{fd['id']}",type="primary")
                     if CAN_CHANGE and st.button(f"🗑️ Delete {fd['title']} - Maker Only",key=f"del_fin_{fd['id']}"): fin=[x for x in fin if x['id']!=fd['id']]; save_json(FILES["finance"],fin); st.success("Deleted!"); st.rerun()
-    else:
-        st.error(f"🚫 RESTRICTED: Finance is 5 ONLY. You are {user_full}")
+    else: st.error(f"🚫 RESTRICTED: Finance is 5 ONLY. You are {user_full}")
 
 with tabs[10]:
-    st.subheader("🔐 Secret - OPEN TO ALL 13 - ALL CAN POST!")
+    st.subheader("🔐 Secret - ALL CAN POST!")
     sec=load_json(FILES["docs"],st.session_state.docs)
     dc=st.selectbox("Category",DOC_CATS,key="sec_cat"); dt_=st.text_input("Title *",key="sec_t"); dd=st.text_area("Description",key="sec_d")
-    if st.button("Save Secret - ALL CAN DO THIS",type="primary",key="sec_s"): sec.append({"id":len(sec)+1,"category":dc,"title":dt_.strip(),"description":dd.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d")}); save_json(FILES["docs"],sec); st.success("Saved!"); st.rerun()
+    if st.button("Save Secret",type="primary",key="sec_s"): sec.append({"id":len(sec)+1,"category":dc,"title":dt_.strip(),"description":dd.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d")}); save_json(FILES["docs"],sec); st.success("Saved!"); st.rerun()
     for d in reversed(sec):
         with st.container(border=True):
             st.write(f"**{d['category']} | {d['title']} - {d['by']}**"); st.write(d['description'])
             if CAN_CHANGE and st.button(f"🗑️ Delete {d['title']} - Maker Only",key=f"del_sec_{d['id']}"): sec=[x for x in sec if x['id']!=d['id']]; save_json(FILES["docs"],sec); st.success("Deleted!"); st.rerun()
 
 with tabs[11]:
-    st.subheader("📄 Documents - OPEN TO ALL 13 - ALL CAN UPLOAD FROM MICROSOFT!")
+    st.subheader("📄 Documents - ALL CAN UPLOAD FROM MICROSOFT!")
     docs=load_json(FILES["uploaded"],st.session_state.uploaded)
-    dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dtit=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d"); df=st.file_uploader("Upload File * PDF / Excel / PPT / Word / Audio",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv","jpg","png","mp3","m4a","wav","ogg"],key="doc_f")
+    dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dtit=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d"); df=st.file_uploader("Upload File *",type=["pdf","xlsx","xls","pptx","ppt","docx","doc","csv","jpg","png","mp3","m4a","wav","ogg"],key="doc_f")
     if st.button("Upload Document - ALL 13 SEE SAME!",type="primary",use_container_width=True,key="doc_s"):
         if not dtit.strip() or not df: st.error("Title + File required")
         else:
@@ -403,9 +381,9 @@ with tabs[11]:
             if CAN_CHANGE and st.button(f"🗑️ Delete {doc['title']} - Maker Only",key=f"del_doc_{doc['id']}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
 
 with tabs[12]:
-    st.subheader("📸 Media Gallery - OPEN TO ALL 13 - ALL CAN UPLOAD!")
+    st.subheader("📸 Media Gallery - ALL CAN UPLOAD!")
     med=load_json(FILES["media"],st.session_state.media)
-    mt=st.text_input("Media Title *",key="media_t"); mf=st.file_uploader("File * JPG/PNG/MP4/MP3/M4A/WAV/OGG",type=["jpg","png","jpeg","mp4","mp3","m4a","wav","ogg","mov"],key="media_f")
+    mt=st.text_input("Media Title *",key="media_t"); mf=st.file_uploader("File *",type=["jpg","png","jpeg","mp4","mp3","m4a","wav","ogg","mov"],key="media_f")
     if st.button("Upload - ALL 13 SEE SAME GALLERY!",type="primary",use_container_width=True,key="media_s"):
         if not mt.strip() or not mf: st.error("Title + File required")
         else:
@@ -436,10 +414,10 @@ with tabs[12]:
                     save_json(FILES["media"],med); st.success(f"Deleted {m['title']}!"); st.rerun()
 
 with tabs[13]:
-    st.subheader("🏛️ Cabinet Archive - OPEN TO ALL 13 - ALL CAN POST!")
+    st.subheader("🏛️ Cabinet Archive - ALL CAN POST!")
     cabs=load_json(FILES["cabinets"],st.session_state.cabinets)
     cy=st.text_input("Year *",key="cab_y"); cn=st.text_input("Cabinet Name *",key="cab_n"); cm=st.text_area("Members List *",key="cab_m"); cp=st.file_uploader("Group Photo *",type=["jpg","png","jpeg"],key="cab_p")
-    if st.button("Save Cabinet - ALL CAN DO THIS",type="primary",use_container_width=True,key="cab_s"):
+    if st.button("Save Cabinet",type="primary",use_container_width=True,key="cab_s"):
         if not cy or not cn or not cm or not cp: st.error("All required")
         else: fpath=f"data/media_files/cab_{len(cabs)+1}.jpg"; open(fpath,'wb').write(cp.getvalue()); cabs.append({"id":len(cabs)+1,"year":cy.strip(),"name":cn.strip(),"members":cm.strip(),"photo_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d")}); save_json(FILES["cabinets"],cabs); st.success("Saved!"); st.rerun()
     for cab in reversed(cabs):
@@ -455,4 +433,4 @@ with tabs[14]:
     st.subheader("📜 Audit Log - OPEN!"); audit=load_json(FILES["audit"],st.session_state.audit)
     if audit: st.dataframe(pd.DataFrame(reversed(audit)),use_container_width=True)
 
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED | Direct Call No Login No Save | Only Maker Can Delete / Change Settings | 🔒 All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year} | Direct: {DIRECT_LINK}</p>",unsafe_allow_html=True)
+st.markdown("---"); st.markdown(f"<p style='text-align:center;color:gray;'>UNIK BEC UNASNM | 800+ FIXED | Press Link, Go Straight To Google Meet, Wait There | Only Maker Can Delete / Change Settings | 🔒 All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year} | Google Meet: {MEET_LINK}</p>",unsafe_allow_html=True)
