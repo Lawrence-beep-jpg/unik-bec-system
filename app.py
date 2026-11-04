@@ -49,6 +49,23 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
+# HEADER WITH YOUR 2 GROUP ICONS - LEFT UNASNM, RIGHT UNIVERSITY OF KISUBI, WAY THEY ARE
+def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
+    c_left, c_mid, c_right = st.columns([1,3,1])
+    with c_left:
+        if os.path.exists("unasnm.jpg"): st.image("unasnm.jpg", width=110)
+        elif os.path.exists("unasnm.png"): st.image("unasnm.png", width=110)
+        elif os.path.exists("unasnm.jpeg"): st.image("unasnm.jpeg", width=110)
+        else: st.image("https://via.placeholder.com/110", width=110)
+    with c_mid:
+        st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM<br>Governance Portal</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center;color:#000000;'>{subtitle}</p>", unsafe_allow_html=True)
+    with c_right:
+        if os.path.exists("university.jpg"): st.image("university.jpg", width=110)
+        elif os.path.exists("university.png"): st.image("university.png", width=110)
+        elif os.path.exists("university.jpeg"): st.image("university.jpeg", width=110)
+        else: st.image("https://via.placeholder.com/110", width=110)
+
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
 USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker - Hon. Lawrence Ssango","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
@@ -109,7 +126,8 @@ def retention_badge(item):
     return "Keeps: Forever"
 
 if is_public:
-    st.markdown("<h3 style='text-align:center;color:#0B3D1E;'>PUBLIC ELECTORAL COMMISSION</h3><p style='text-align:center;color:#000000;'>One Email = One Vote</p>",unsafe_allow_html=True)
+    show_header("One Email = One Vote")
+    st.markdown("<h3 style='text-align:center;color:#0B3D1E;'>PUBLIC ELECTORAL COMMISSION</h3>",unsafe_allow_html=True)
     t1,t2,t3=st.tabs(["Apply Candidate","Vote One Email Once","Live Results"])
     with t1:
         rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="pub_pos")
@@ -145,7 +163,7 @@ if is_public:
     st.stop()
 
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM<br>Welcome, Family! Governance Portal</h2><p style='text-align:center;color:#000000;'>Friendly, colourful, easy. Tap green, join Meet.</p>",unsafe_allow_html=True)
+    show_header("Welcome, Family! Governance Portal")
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
     st.info(f"MEET LINK: {MEET_LINK}")
     PUBLIC_VOTE_LINK="https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
@@ -188,7 +206,7 @@ with st.sidebar:
                 else: st.session_state.passwords[user]=new; save_json(FILES["passwords"],st.session_state.passwords); st.success("Changed!")
     if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
 
-st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM - Friendly Portal</h2><p style='text-align:center;color:#000000;'>Organised like WhatsApp. Colourful. Easy. Clear to see.</p>",unsafe_allow_html=True)
+show_header("Organised like WhatsApp. Colourful. Easy. Clear to see.")
 st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
 st.success("ALL 13 CAN: Upload ANY FILE, Download to Phone / Laptop, Vote, Join Meet, Submit. ONLY MAKER CAN: Delete, Renew, Approve, Change Settings.")
 st.warning("PHONE SPACE: Portal cannot write straight into your phone. Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
