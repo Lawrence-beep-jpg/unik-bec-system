@@ -1,14 +1,19 @@
-import streamlit as st, os, json, pandas as pd, time
+import streamlit as st, os, json, pandas as pd, time, re
 from datetime import datetime as dt, timedelta
-st.set_page_config(page_title="UNIK BEC UNASNM Governance Portal", page_icon="🏛️", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="UNIK BEC UNASNM Governance Portal", page_icon="🏛️", layout="wide", initial_sidebar_state="collapsed")
 
 os.makedirs("data/media_files", exist_ok=True)
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
 
 DEFAULT_MEET_LINK = "https://meet.google.com/abc-defg-hij"
+TEAMS_LINK = "https://teams.microsoft.com"
+OFFICE_LINK = "https://www.office.com"
+WORD_LINK = "https://word.cloud.microsoft"
+EXCEL_LINK = "https://excel.cloud.microsoft"
+PPT_LINK = "https://powerpoint.cloud.microsoft"
 
-FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json"}
+FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json"}
 
 def load_json(p,d):
     if os.path.exists(p):
@@ -22,13 +27,6 @@ def get_meet_link():
     d=load_json(FILES["meetlink"],{})
     link=d.get("link","") if isinstance(d,dict) else ""
     return link.strip() if link else DEFAULT_MEET_LINK
-def add_notify(title,body,sender="System"):
-    try:
-        nlist=load_json(FILES["notif"],[])
-        nlist.append({"id":len(nlist)+1,"title":title,"body":body,"from":sender,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
-        save_json(FILES["notif"],nlist); st.session_state.notif=nlist
-    except: pass
-    st.toast(f"🔔 {title}: {body}",icon="🔔")
 
 KEEP_OPTIONS={"7 Days - then disappears from portal":7,"30 Days":30,"90 Days":90,"1 Year - 365 Days":365,"Forever on Portal":36500}
 def keep_days(label):
@@ -47,6 +45,11 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
+# TWO BADGES ADDED IN THE CODE - LEFT UNIVERSITY, RIGHT NATIONAL UNASNM - NO FILE NEEDED
+def badge_html(kind):
+    if kind=="university":
+        return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#0B3D1E;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>✚</div><div style='color:#FFD700;font-weight:900;font-size:22px;line-height:1.1;'>UNIVERSITY<br>OF KISUBI</div><div style='color:#FFFFFF;font-weight:900;font-size:18px;'>UniK</div><div style='color:#FFFFFF;font-size:15px;font-weight:700;'>📖 In Virtue We Educate</div><div style='color:#FFD700;font-size:14px;font-weight:700;'>EST. 2004</div></div>"""
+    return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#075E54;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>🩺</div><div style='color:#FFD700;font-weight:900;font-size:24px;line-height:1.1;'>UNASNM</div><div style='color:#FFFFFF;font-weight:900;font-size:16px;line-height:1.2;'>UGANDA NATIONAL<br>ASSOCIATION OF<br>STUDENT NURSES<br>AND MIDWIVES</div><div style='color:#FFD700;font-size:15px;font-weight:700;'>✚ Nursing Cap • Care • Unity</div></div>"""
 def find_badge(name):
     for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
         if os.path.exists(f): return f
@@ -56,16 +59,30 @@ def show_space(name):
     if f:
         st.image(f, use_container_width=True)
     else:
-        st.markdown("<div style='height:220px;'></div>", unsafe_allow_html=True)
+        st.markdown(badge_html(name), unsafe_allow_html=True)
 def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
     c_left, c_mid, c_right = st.columns([2,3,2])
     with c_left:
-        show_space("unasnm")
-    with c_mid:
-        st.markdown("<h1 style='text-align:center;color:#0B3D1E;font-size:48px;line-height:1.1;'>UNIK BEC UNASNM<br>Governance Portal</h1>", unsafe_allow_html=True)
-        st.markdown(f"<p style='text-align:center;color:#000000;font-size:26px;font-weight:900;'>{subtitle}</p>", unsafe_allow_html=True)
-    with c_right:
         show_space("university")
+    with c_mid:
+        st.markdown("<h1 style='text-align:center;color:#FFFFFF;font-size:48px;line-height:1.1;'>UNIK BEC UNASNM<br>Governance Portal</h1>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center;color:#FFFFFF;font-size:26px;font-weight:900;'>{subtitle}</p>", unsafe_allow_html=True)
+    with c_right:
+        show_space("unasnm")
+
+def office_buttons():
+    st.markdown("### MICROSOFT TEAMS AND MICROSOFT OFFICE - UPLOAD DIRECT HERE, NO COPY")
+    st.write("Tap one, it opens Teams / Word / Excel / PowerPoint. Work there, save there, then upload the file below direct in this portal. Do not copy files out.")
+    b1,b2,b3,b4=st.columns(4)
+    b1.link_button("OPEN MICROSOFT TEAMS", TEAMS_LINK, use_container_width=True)
+    b2.link_button("OPEN WORD", WORD_LINK, use_container_width=True)
+    b3.link_button("OPEN EXCEL", EXCEL_LINK, use_container_width=True)
+    b4.link_button("OPEN POWERPOINT", PPT_LINK, use_container_width=True)
+    st.link_button("OPEN MICROSOFT OFFICE - ALL", OFFICE_LINK, use_container_width=True)
+
+def youtube_id(url):
+    m=re.search(r"(?:v=|youtu\.be/|shorts/)([A-Za-z0-9_-]{6,})", url or "")
+    return m.group(1) if m else ""
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
@@ -85,22 +102,19 @@ if 'user' not in st.session_state: st.session_state.user=""
 
 st.markdown("""
 <style>
-.stApp{background: linear-gradient(180deg, #FFF8E1 0%, #E8F5E9 55%, #FFF3E0 100%) !important; color:#000000 !important;}
+.stApp{background: linear-gradient(180deg, #0B3D1E 0%, #075E54 260px, #FFF8E1 261px, #E8F5E9 100%) !important; color:#000000 !important;}
+section[data-testid="stSidebar"]{display:none !important;}
+button[data-testid="collapsedControl"]{display:none !important;}
 .stApp p, .stApp div, .stApp label, .stApp span{color:#000000 !important; font-size:18px !important; font-weight:600 !important;}
 h1,h2,h3{color:#0B3D1E !important; font-weight:900 !important;}
 input, textarea, select{color:#000000 !important; background-color:#FFFFFF !important; font-size:18px !important; font-weight:700 !important; border:2px solid #0B3D1E !important;}
-div[data-testid="stSidebar"]{background-color:#FFF8E1 !important; color:#000000 !important; border-right:3px solid #0B6B3A !important;}
-div[data-testid="stSidebar"] p, div[data-testid="stSidebar"] div, div[data-testid="stSidebar"] label, div[data-testid="stSidebar"] span, div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3{color:#000000 !important; font-size:18px !important; font-weight:700 !important; background-color:transparent !important;}
-div[data-testid="stSidebar"] input{color:#000000 !important; background-color:#FFFFFF !important; border:2px solid #0B3D1E !important;}
-div[data-testid="stSidebar"] a{color:#0B6B3A !important; font-weight:900 !important;}
-div[data-testid="stSidebar"] [data-testid="stAlert"]{background-color:#FFFFFF !important; color:#000000 !important;}
-div[data-testid="stSidebar"] [data-testid="stAlert"] p{color:#000000 !important;}
 button[kind="primary"]{background-color:#075E54 !important; color:#FFFFFF !important; border-radius:20px !important; font-size:18px !important; font-weight:900 !important;}
 button[kind="primary"] p, button[kind="primary"] span{color:#FFFFFF !important;}
 button[kind="secondary"]{background-color:#FFFFFF !important; color:#000000 !important; border:2px solid #075E54 !important; font-size:18px !important; font-weight:900 !important;}
 button[kind="secondary"] p, button[kind="secondary"] span{color:#000000 !important;}
 div[data-testid="stAlert"]{color:#000000 !important; background-color:#FFFFFF !important;}
 div[data-testid="stAlert"] p{color:#000000 !important; font-size:18px !important; font-weight:700 !important;}
+a{color:#0B6B3A !important; font-weight:900 !important;}
 </style>
 """,unsafe_allow_html=True)
 
@@ -129,7 +143,7 @@ def retention_badge(item):
 
 if is_public:
     show_header("One Email = One Vote")
-    st.markdown("<h3 style='text-align:center;color:#0B3D1E;font-size:32px;'>PUBLIC ELECTORAL COMMISSION</h3>",unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center;color:#FFFFFF;font-size:32px;'>PUBLIC ELECTORAL COMMISSION</h3>",unsafe_allow_html=True)
     t1,t2,t3=st.tabs(["Apply Candidate","Vote One Email Once","Live Results"])
     with t1:
         rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="pub_pos")
@@ -166,8 +180,9 @@ if is_public:
 
 if not st.session_state.logged_in:
     show_header("Welcome, Family! Governance Portal")
-    st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
+    st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
     st.info(f"MEET LINK: {MEET_LINK}")
+    office_buttons()
     PUBLIC_VOTE_LINK="https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
     st.markdown(f"### PUBLIC VOTE FOR ALL STUDENTS\nLink: {PUBLIC_VOTE_LINK}")
     st.markdown("## LOGIN HERE - CHOOSE YOUR OFFICE, TYPE PASSWORD")
@@ -182,29 +197,15 @@ if not st.session_state.logged_in:
 
 user=st.session_state.user; user_full=USERS[user]
 reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FILES["media"],st.session_state.media); docs_uploaded=load_json(FILES["uploaded"],st.session_state.uploaded); votes=load_json(FILES["votes"],st.session_state.votes)
-notifs_now=load_json(FILES["notif"],[])
 
-with st.sidebar:
-    st.markdown("### UNIK BEC - Chats")
-    st.markdown(f"Hello, {user_full}")
-    st.markdown(f"[JOIN GOOGLE MEET]({MEET_LINK})")
-    search=st.text_input("Search departments",key="wa_search",placeholder="Search...")
-    st.markdown("All | Unread | Favourites | Groups  Notifications: "+str(len(notifs_now))+"  13 Online")
-    st.markdown("STATUS - All 13 Online Now")
-    for _u in LOGIN_USERS: st.markdown(f"Online: {USERS[_u]}")
-    st.markdown("---")
-    PAGES=["Dashboard","My Personal Portal","Public Portal OPEN","Meeting - GOOGLE MEET DIRECT","Submit Report","Private SUPER 4","Electoral OPEN","Disciplinary OPEN","GP OPEN","Finance 5 ONLY","Secret OPEN","Documents OPEN","Media Gallery OPEN - ANY FILE","Cabinet Archive OPEN","Audit Log"]
-    if search: PAGES=[p for p in PAGES if search.lower() in p.lower()] or PAGES
-    page=st.radio("Departments",PAGES,key="wa_page",label_visibility="collapsed")
-    st.markdown("---")
-    st.markdown("YOUR PHONE SPACE")
-    st.markdown("Download any file, it stays in your phone / laptop Files forever, even after portal time ends.")
-    for _n in reversed(notifs_now[-5:]): st.info(f"{_n['title']} - {_n['body'][:60]}")
-    if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
-
-show_header("Organised like WhatsApp. Colourful. Easy. Clear to see.")
-st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
-st.success("ALL 13 CAN: Upload ANY FILE, Download to Phone / Laptop, Vote, Join Meet, Submit, Open Every Department, See Every Photo.")
+show_header("Organised, colourful, easy. Everything visible on this big screen.")
+st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
+st.markdown(f"Hello, {user_full} | All 13 Online Now")
+office_buttons()
+PAGES=["Dashboard","My Personal Portal","Public Portal OPEN","Meeting - GOOGLE MEET DIRECT","Submit Report","Private SUPER 4","Electoral OPEN","Disciplinary OPEN","GP OPEN","Finance - MICROSOFT TEAMS AND OFFICE","Secret OPEN","Documents OPEN","Media Gallery OPEN - ANY FILE","YouTube - TAGGED VIDEOS","Cabinet Archive OPEN","Audit Log"]
+page=st.selectbox("CHOOSE DEPARTMENT - ALL VISIBLE HERE, TAP ONE",PAGES,key="top_page")
+if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
+st.success("ALL 13 CAN: Upload ANY FILE direct, Download to Phone / Laptop, Vote, Join Meet, Join Teams, Use Office, Submit, Open Every Department, See Every Photo. No copy out.")
 st.warning("PHONE SPACE: Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
 st.markdown(f"### {page}  |  13 departments  |  Online now")
 st.divider()
@@ -213,11 +214,35 @@ if page.startswith("Dashboard"):
     st.subheader("Dashboard"); c1,c2,c3,c4=st.columns(4)
     c1.metric("Reports",len(reports)); c2.metric("Media",len(media)); c3.metric("Docs",len(docs_uploaded)); c4.metric("Votes",len(votes))
     st.info("Tip: Go to Media Gallery, download the Anthem to your phone, then it is yours forever.")
-    for _n in reversed(load_json(FILES["notif"],[])[-10:]): st.info(f"{_n['title']} - {_n['body']}")
+    yt=load_json(FILES["youtube"],st.session_state.youtube)
+    st.subheader("YouTube - All You Were Tagged In - Watch Here")
+    for y in reversed(yt[-3:]):
+        vid=youtube_id(y.get("url",""))
+        if vid: st.video(f"https://www.youtube.com/watch?v={vid}")
+        st.write(y.get("title",""))
+
+elif page.startswith("YouTube"):
+    st.subheader("YouTube - TAGGED VIDEOS - Paste Link, Watch Here, No Copy")
+    st.write("Dear, lie down everything you were tagged in on YouTube here. Paste the link, tap Save, you will see it here at once. All 13 will see it here too.")
+    yt=load_json(FILES["youtube"],st.session_state.youtube)
+    yt_t=st.text_input("Video Title - type here, what is it about?",key="yt_t")
+    yt_u=st.text_input("YouTube Link - paste here",key="yt_u")
+    if st.button("SAVE YOUTUBE VIDEO HERE",type="primary",use_container_width=True,key="yt_s"):
+        if not yt_u: st.error("Paste YouTube link first")
+        else:
+            yt.append({"id":int(time.time()),"title":yt_t.strip(),"url":yt_u.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["youtube"],yt); st.success("Saved! Watch it below now."); st.balloons(); st.rerun()
+    for idx,y in enumerate(reversed(yt)):
+        with st.container(border=True):
+            st.markdown(f"{y.get('title','YouTube Video')} | by {y.get('by','')} | {y.get('date','')}")
+            vid=youtube_id(y.get("url",""))
+            if vid: st.video(f"https://www.youtube.com/watch?v={vid}")
+            st.write(y.get("url",""))
+            st.link_button("OPEN ON YOUTUBE", y.get("url",""), use_container_width=True)
 
 elif page.startswith("Media"):
     st.subheader("Media Gallery - ANY FILE - MPEG, MP4, MP3, JPG, PDF, ZIP")
-    st.info("Upload here, any file from any source. Everyone can see every photo here. Download to phone = keep forever in your phone.")
+    st.info("Upload here direct, any file from any source. Everyone can see every photo here. Download to phone = keep forever in your phone.")
+    office_buttons()
     med=load_json(FILES["media"],st.session_state.media)
     mt=st.text_input("Media Title *",key="media_t")
     keep_label=st.selectbox("Keep on portal for:",list(KEEP_OPTIONS.keys()),key="media_keep")
@@ -255,15 +280,16 @@ elif page.startswith("Media"):
 
 elif page.startswith("Documents"):
     st.subheader("Documents - ANY FILE + Keep Time")
+    office_buttons()
     docs=load_json(FILES["uploaded"],st.session_state.uploaded)
     dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dtit=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d")
     keep2=st.selectbox("Keep on portal for:",list(KEEP_OPTIONS.keys()),key="doc_keep")
-    df=st.file_uploader("Upload File * - ANY FILE - MPEG, MP4, MP3, JPG, PDF, ZIP",key="doc_f")
+    df=st.file_uploader("Upload File * - ANY FILE - MPEG, MP4, MP3, JPG, PDF, ZIP, Word, Excel",key="doc_f")
     if st.button("Upload Document - ALL 13 SEE SAME!",type="primary",use_container_width=True,key="doc_s"):
         if not dtit.strip() or not df: st.error("Title + File required")
         else:
             safe=df.name.replace(" ","_"); fpath=f"data/documents/doc_{int(time.time())}_{safe}"; open(fpath,'wb').write(df.getvalue())
-            docs.append({"id":int(time.time()),"category":dcat,"title":dtit.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep2,"expires":expiry_str(keep_days(keep2))}); save_json(FILES["uploaded"],docs); st.success("Uploaded! Download to phone to keep forever."); st.balloons(); st.rerun()
+            docs.append({"id":int(time.time()),"category":dcat,"title":dtit.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep2,"expires":expiry_str(keep_days(keep2))}); save_json(FILES["uploaded"],docs); st.success("Uploaded direct! Download to phone to keep forever."); st.balloons(); st.rerun()
     for idx,doc in enumerate(reversed(docs)):
         with st.container(border=True):
             st.markdown(f"{doc['title']} | {doc['category']} | by {doc['by']}"); st.write(retention_badge(doc))
@@ -277,14 +303,15 @@ elif page.startswith("Documents"):
             if st.button(f"Delete Forever - {doc['title']}",key=f"del_doc_{doc['id']}_{idx}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
 
 elif page.startswith("Public"):
-    st.subheader("Public Portal - WhatsApp Group Chat")
+    st.subheader("Public Portal")
+    office_buttons()
     anns=load_json(FILES["ann"],st.session_state.ann)
     at=st.text_input("Title *",key="ann_t"); acont=st.text_area("Message *",key="ann_c"); af=st.file_uploader("Attach File - ANY FILE",key="ann_f")
     if st.button("BROADCAST TO ALL 13",type="primary",use_container_width=True):
         fpath=""; fname=""
         if af: fname=af.name.replace(" ","_"); fpath=f"data/documents/ann_{int(time.time())}_{fname}"; open(fpath,'wb').write(af.getvalue())
         anns.append({"id":int(time.time()),"title":at.strip(),"content":acont.strip(),"file_name":fname,"file_path":fpath,"from":user,"from_name":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
-        save_json(FILES["ann"],anns); add_notify("New Public Message",f"{at.strip()}",user_full); st.success("Broadcasted!"); st.balloons(); st.rerun()
+        save_json(FILES["ann"],anns); st.success("Broadcasted!"); st.balloons(); st.rerun()
     for idx,ann in enumerate(reversed(anns)):
         with st.container(border=True):
             st.markdown(f"{ann['title']} | {ann['from_name']} | {ann['date']} | Seen by 13"); st.info(ann['content'])
@@ -293,9 +320,10 @@ elif page.startswith("Public"):
                 download_and_keep(ann['file_path'],ann.get('file_name',''),key=f"dl_ann_{ann['id']}_{idx}")
 
 elif page.startswith("Meeting"):
-    st.subheader("Meeting - GOOGLE MEET DIRECT")
-    st.success(f"Current Link: {MEET_LINK}")
+    st.subheader("Meeting - GOOGLE MEET DIRECT + MICROSOFT TEAMS")
+    st.success(f"Current Meet Link: {MEET_LINK}")
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:20px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW</a>", unsafe_allow_html=True)
+    st.link_button("JOIN MICROSOFT TEAMS MEETING", TEAMS_LINK, use_container_width=True)
     st.code(MEET_LINK)
     new_link=st.text_input("Paste NEW Google Meet Link",value=MEET_LINK,key="new_meet_link")
     if st.button("SAVE LINK",type="primary",use_container_width=True):
@@ -304,6 +332,7 @@ elif page.startswith("Meeting"):
 
 elif page.startswith("My Personal"):
     st.subheader("My Personal Portal - ONLY YOU")
+    office_buttons()
     personal=load_json(FILES["personal"],st.session_state.personal); my_personal=[p for p in personal if p['owner']==user]
     pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes *",key="pers_c"); pf=st.file_uploader("File - ANY FILE",key="pers_f")
     if st.button("Save PRIVATE",type="primary",use_container_width=True,key="pers_s"):
@@ -317,10 +346,19 @@ elif page.startswith("My Personal"):
             if p.get('file_path',''): show_any_file(p['file_path'],p.get('file_name','')); download_and_keep(p['file_path'],p.get('file_name',''),key=f"dl_pers_{p['id']}_{idx}")
 
 elif page.startswith("Submit"):
-    st.subheader("Submit Report")
-    rt=st.selectbox("Report Type",REPORT_TYPES,key="rt"); rtitle=st.text_input("Title *",key="rtitle"); rcontent=st.text_area("Details *",key="rcontent")
+    st.subheader("Submit Report - With Microsoft Office and Teams")
+    office_buttons()
+    rt=st.selectbox("Report Type",REPORT_TYPES,key="rt"); rtitle=st.text_input("Title *",key="rtitle"); rcontent=st.text_area("Details * - type here",key="rcontent")
+    rf=st.file_uploader("Attach Report File - Word, Excel, PDF, ANY FILE - upload direct",key="rep_f")
     if st.button("Submit Report",type="primary",use_container_width=True):
-        reports.append({"id":int(time.time()),"date":dt.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip()}); save_json(FILES["reports"],reports); st.success("Saved!"); st.balloons()
+        fpath=""; fname=""
+        if rf: fname=rf.name.replace(" ","_"); fpath=f"data/documents/report_{int(time.time())}_{fname}"; open(fpath,'wb').write(rf.getvalue())
+        reports.append({"id":int(time.time()),"date":dt.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip(),"file_name":fname,"file_path":fpath}); save_json(FILES["reports"],reports); st.success("Report submitted!"); st.balloons(); st.rerun()
+    for idx,r in enumerate(reversed(reports)):
+        with st.container(border=True):
+            st.markdown(f"{r['title']} | {r.get('type','')} | {r['from_name']}")
+            st.info(r.get('content',''))
+            if r.get('file_path',''): show_any_file(r['file_path'],r.get('file_name','')); download_and_keep(r['file_path'],r.get('file_name',''),key=f"dl_rep_{r['id']}_{idx}")
 
 elif page.startswith("Private"):
     st.subheader("Private SUPER 4")
@@ -351,13 +389,15 @@ elif page.startswith("GP"):
     for gpr in reversed(gp): st.info(f"{gpr['title']} - {gpr['by']} - {gpr['content']}")
 
 elif page.startswith("Finance"):
-    st.subheader("Finance")
+    st.subheader("Finance - MICROSOFT TEAMS AND MICROSOFT OFFICE - Finance Can Access All")
+    st.write("Finance, open Teams here, open Excel here, work, then upload direct below. No copy out, no remove files to add elsewhere.")
+    office_buttons()
     fin=load_json(FILES["finance"],st.session_state.finance)
-    f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload ANY FILE",key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
-    if st.button("Save Finance",type="primary",key="fin_s2"):
+    f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload ANY FILE - Excel, Word, PDF, ANY FILE - upload direct",key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
+    if st.button("Save Finance Report",type="primary",key="fin_s2"):
         fname=""; fpath=""
         if f_f: fname=f_f.name.replace(" ","_"); fpath=f"data/documents/finance_{int(time.time())}_{fname}"; open(fpath,'wb').write(f_f.getvalue())
-        fin.append({"id":int(time.time()),"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"],fin); st.success("Saved!"); st.rerun()
+        fin.append({"id":int(time.time()),"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"],fin); st.success("Finance saved!"); st.balloons(); st.rerun()
     for idx,fd in enumerate(reversed(fin)):
         with st.container(border=True):
             st.markdown(f"{fd['title']} - UGX {fd.get('amount',0):,}")
