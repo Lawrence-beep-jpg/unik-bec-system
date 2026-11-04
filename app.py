@@ -49,22 +49,26 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
-# HEADER WITH YOUR 2 GROUP ICONS - LEFT UNASNM, RIGHT UNIVERSITY OF KISUBI, WAY THEY ARE
+# BIG BADGES - LEFT UNASNM, RIGHT UNIVERSITY OF KISUBI - NO BLANK BOX
+def find_badge(name):
+    for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
+        if os.path.exists(f): return f
+    return ""
+def show_big_badge(name, label):
+    f = find_badge(name)
+    if f:
+        st.image(f, use_container_width=True)
+    else:
+        st.markdown(f"<p style='text-align:center;color:#000000;font-size:22px;font-weight:900;'>BADGE NOT FOUND<br>{name}.jpg<br>Upload it to GitHub<br>Same folder as app.py</p>", unsafe_allow_html=True)
 def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
-    c_left, c_mid, c_right = st.columns([1,3,1])
+    c_left, c_mid, c_right = st.columns([2,3,2])
     with c_left:
-        if os.path.exists("unasnm.jpg"): st.image("unasnm.jpg", width=110)
-        elif os.path.exists("unasnm.png"): st.image("unasnm.png", width=110)
-        elif os.path.exists("unasnm.jpeg"): st.image("unasnm.jpeg", width=110)
-        else: st.image("https://via.placeholder.com/110", width=110)
+        show_big_badge("unasnm", "UNASNM")
     with c_mid:
         st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM<br>Governance Portal</h2>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align:center;color:#000000;'>{subtitle}</p>", unsafe_allow_html=True)
     with c_right:
-        if os.path.exists("university.jpg"): st.image("university.jpg", width=110)
-        elif os.path.exists("university.png"): st.image("university.png", width=110)
-        elif os.path.exists("university.jpeg"): st.image("university.jpeg", width=110)
-        else: st.image("https://via.placeholder.com/110", width=110)
+        show_big_badge("university", "UNIVERSITY")
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
