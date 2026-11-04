@@ -49,7 +49,6 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
-# SPACE ONLY LEFT AND RIGHT - NO WORDS - GROUP ICON IN MIDDLE
 def find_badge(name):
     for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
         if os.path.exists(f): return f
@@ -70,23 +69,6 @@ def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
         st.markdown(f"<p style='text-align:center;color:#000000;'>{subtitle}</p>", unsafe_allow_html=True)
     with c_right:
         show_space("university")
-def badge_spaces_for_maker():
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        left_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_left_badge", label_visibility="collapsed")
-        if left_file:
-            open("unasnm.jpg",'wb').write(left_file.getvalue())
-            st.rerun()
-    with c2:
-        group_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_group_badge", label_visibility="collapsed")
-        if group_file:
-            open("group_icon.jpg",'wb').write(group_file.getvalue())
-            st.rerun()
-    with c3:
-        right_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_right_badge", label_visibility="collapsed")
-        if right_file:
-            open("university.jpg",'wb').write(right_file.getvalue())
-            st.rerun()
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
@@ -229,8 +211,6 @@ with st.sidebar:
     if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
 
 show_header("Organised like WhatsApp. Colourful. Easy. Clear to see.")
-if CAN_CHANGE:
-    badge_spaces_for_maker()
 st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
 st.success("ALL 13 CAN: Upload ANY FILE, Download to Phone / Laptop, Vote, Join Meet, Submit. ONLY MAKER CAN: Delete, Renew, Approve, Change Settings.")
 st.warning("PHONE SPACE: Portal cannot write straight into your phone. Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
