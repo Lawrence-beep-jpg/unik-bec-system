@@ -49,26 +49,51 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
-# BIG BADGES - LEFT UNASNM, RIGHT UNIVERSITY OF KISUBI - NO BLANK BOX
+# GROUP ICON IS INSIDE THIS CODE - GREEN AND GOLD - CROSS, STETHOSCOPE, BOOK, CAP - NO PHOTO NEEDED
+GROUP_ICON_HTML = """
+<div style="text-align:center;">
+<div style="width:220px;height:220px;margin:0 auto;background:#0B6B3A;border:8px solid #D4AF37;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#FFFFFF;">
+<div style="font-size:64px;line-height:1;color:#FFFFFF;">✚</div>
+<div style="font-size:52px;line-height:1;">🩺</div>
+<div style="font-size:40px;line-height:1;">📖 👩‍⚕️</div>
+<div style="font-size:16px;font-weight:900;color:#FFD700;letter-spacing:2px;">NURSING</div>
+<div style="font-size:13px;font-weight:900;color:#FFFFFF;">UNIK BEC UNASNM</div>
+</div>
+<div style="height:10px;"></div>
+</div>
+"""
 def find_badge(name):
     for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
         if os.path.exists(f): return f
     return ""
-def show_big_badge(name, label):
+def show_space(name):
     f = find_badge(name)
     if f:
         st.image(f, use_container_width=True)
     else:
-        st.markdown(f"<p style='text-align:center;color:#000000;font-size:22px;font-weight:900;'>BADGE NOT FOUND<br>{name}.jpg<br>Upload it to GitHub<br>Same folder as app.py</p>", unsafe_allow_html=True)
+        st.markdown("<div style='height:220px;'></div>", unsafe_allow_html=True)
 def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
     c_left, c_mid, c_right = st.columns([2,3,2])
     with c_left:
-        show_big_badge("unasnm", "UNASNM")
+        show_space("unasnm")
     with c_mid:
+        st.markdown(GROUP_ICON_HTML, unsafe_allow_html=True)
         st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM<br>Governance Portal</h2>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align:center;color:#000000;'>{subtitle}</p>", unsafe_allow_html=True)
     with c_right:
-        show_big_badge("university", "UNIVERSITY")
+        show_space("university")
+def badge_spaces_for_maker():
+    c1, c3 = st.columns(2)
+    with c1:
+        left_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_left_badge", label_visibility="collapsed")
+        if left_file:
+            open("unasnm.jpg",'wb').write(left_file.getvalue())
+            st.rerun()
+    with c3:
+        right_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_right_badge", label_visibility="collapsed")
+        if right_file:
+            open("university.jpg",'wb').write(right_file.getvalue())
+            st.rerun()
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
@@ -211,6 +236,8 @@ with st.sidebar:
     if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
 
 show_header("Organised like WhatsApp. Colourful. Easy. Clear to see.")
+if CAN_CHANGE:
+    badge_spaces_for_maker()
 st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
 st.success("ALL 13 CAN: Upload ANY FILE, Download to Phone / Laptop, Vote, Join Meet, Submit. ONLY MAKER CAN: Delete, Renew, Approve, Change Settings.")
 st.warning("PHONE SPACE: Portal cannot write straight into your phone. Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
