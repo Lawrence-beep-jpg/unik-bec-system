@@ -62,8 +62,7 @@ def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
     with c_left:
         show_space("unasnm")
     with c_mid:
-        show_space("group_icon")
-        st.markdown("<h1 style='text-align:center;color:#0B3D1E;font-size:44px;line-height:1.1;'>UNIK BEC UNASNM<br>Governance Portal</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align:center;color:#0B3D1E;font-size:48px;line-height:1.1;'>UNIK BEC UNASNM<br>Governance Portal</h1>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align:center;color:#000000;font-size:26px;font-weight:900;'>{subtitle}</p>", unsafe_allow_html=True)
     with c_right:
         show_space("university")
@@ -86,7 +85,7 @@ if 'user' not in st.session_state: st.session_state.user=""
 
 st.markdown("""
 <style>
-.stApp{background-color:#FFF8E1 !important; color:#000000 !important;}
+.stApp{background: linear-gradient(180deg, #FFF8E1 0%, #E8F5E9 55%, #FFF3E0 100%) !important; color:#000000 !important;}
 .stApp p, .stApp div, .stApp label, .stApp span{color:#000000 !important; font-size:18px !important; font-weight:600 !important;}
 h1,h2,h3{color:#0B3D1E !important; font-weight:900 !important;}
 input, textarea, select{color:#000000 !important; background-color:#FFFFFF !important; font-size:18px !important; font-weight:700 !important; border:2px solid #0B3D1E !important;}
@@ -170,9 +169,10 @@ if not st.session_state.logged_in:
     PUBLIC_VOTE_LINK="https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
     st.markdown(f"### PUBLIC VOTE FOR ALL STUDENTS\nLink: {PUBLIC_VOTE_LINK}")
     st.markdown("## LOGIN HERE - CHOOSE YOUR OFFICE, TYPE PASSWORD")
+    st.write("Every member does the same: open this link, choose your office, type password, tap LOGIN. No other step.")
     u=st.selectbox("Select Office (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
     p=st.text_input("Password - My Portal",type="password",key="pass")
-    st.write("Password is unik2025 if you have not changed it.")
+    st.write("Password is unik2025 for all 13, unless you changed it before.")
     if st.button("LOGIN TO PORTAL",type="primary",use_container_width=True):
         if p==st.session_state.passwords.get(u,"unik2025"): st.session_state.logged_in=True; st.session_state.user=u; st.rerun()
         else: st.error("Wrong password! Default unik2025")
@@ -215,11 +215,11 @@ if page.startswith("Dashboard"):
 
 elif page.startswith("Media"):
     st.subheader("Media Gallery - ANY FILE - MPEG, MP4, MP3, JPG, PDF, ZIP")
-    st.info("Upload here, choose how long to keep on portal. Download to phone = keep forever in your phone. Everyone can see every photo here.")
+    st.info("Upload here, any file from any source. Everyone can see every photo here. Download to phone = keep forever in your phone.")
     med=load_json(FILES["media"],st.session_state.media)
     mt=st.text_input("Media Title *",key="media_t")
     keep_label=st.selectbox("Keep on portal for:",list(KEEP_OPTIONS.keys()),key="media_keep")
-    mf=st.file_uploader("File * - ANY FILE TYPE",key="media_f")
+    mf=st.file_uploader("File * - ANY FILE TYPE - MPEG, MP4, MP3, JPG, PDF, ZIP",key="media_f")
     if st.button("Upload - ALL 13 SEE SAME GALLERY!",type="primary",use_container_width=True,key="media_s"):
         if not mt.strip() or not mf: st.error("Title + File required")
         else:
@@ -256,7 +256,7 @@ elif page.startswith("Documents"):
     docs=load_json(FILES["uploaded"],st.session_state.uploaded)
     dcat=st.selectbox("Category",DOC_CATS,key="doc_cat"); dtit=st.text_input("Title *",key="doc_t"); dd=st.text_area("Description",key="doc_d")
     keep2=st.selectbox("Keep on portal for:",list(KEEP_OPTIONS.keys()),key="doc_keep")
-    df=st.file_uploader("Upload File * - ANY FILE",key="doc_f")
+    df=st.file_uploader("Upload File * - ANY FILE - MPEG, MP4, MP3, JPG, PDF, ZIP",key="doc_f")
     if st.button("Upload Document - ALL 13 SEE SAME!",type="primary",use_container_width=True,key="doc_s"):
         if not dtit.strip() or not df: st.error("Title + File required")
         else:
