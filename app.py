@@ -89,15 +89,17 @@ st.markdown("""
 .stApp p, .stApp div, .stApp label, .stApp span{color:#000000 !important; font-size:18px !important; font-weight:600 !important;}
 h1,h2,h3{color:#0B3D1E !important; font-weight:900 !important;}
 input, textarea, select{color:#000000 !important; background-color:#FFFFFF !important; font-size:18px !important; font-weight:700 !important; border:2px solid #0B3D1E !important;}
-div[data-testid="stSidebar"]{background-color:#075E54 !important;}
-div[data-testid="stSidebar"] p, div[data-testid="stSidebar"] div, div[data-testid="stSidebar"] label, div[data-testid="stSidebar"] span, div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3{color:#FFFFFF !important; font-size:18px !important; font-weight:700 !important;}
-div[data-testid="stSidebar"] input{color:#000000 !important; background-color:#FFFFFF !important;}
-div[data-testid="stSidebar"] a{color:#FFFF00 !important; font-weight:900 !important;}
+div[data-testid="stSidebar"]{background-color:#FFF8E1 !important; color:#000000 !important; border-right:3px solid #0B6B3A !important;}
+div[data-testid="stSidebar"] p, div[data-testid="stSidebar"] div, div[data-testid="stSidebar"] label, div[data-testid="stSidebar"] span, div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3{color:#000000 !important; font-size:18px !important; font-weight:700 !important; background-color:transparent !important;}
+div[data-testid="stSidebar"] input{color:#000000 !important; background-color:#FFFFFF !important; border:2px solid #0B3D1E !important;}
+div[data-testid="stSidebar"] a{color:#0B6B3A !important; font-weight:900 !important;}
+div[data-testid="stSidebar"] [data-testid="stAlert"]{background-color:#FFFFFF !important; color:#000000 !important;}
+div[data-testid="stSidebar"] [data-testid="stAlert"] p{color:#000000 !important;}
 button[kind="primary"]{background-color:#075E54 !important; color:#FFFFFF !important; border-radius:20px !important; font-size:18px !important; font-weight:900 !important;}
 button[kind="primary"] p, button[kind="primary"] span{color:#FFFFFF !important;}
 button[kind="secondary"]{background-color:#FFFFFF !important; color:#000000 !important; border:2px solid #075E54 !important; font-size:18px !important; font-weight:900 !important;}
 button[kind="secondary"] p, button[kind="secondary"] span{color:#000000 !important;}
-div[data-testid="stAlert"]{color:#000000 !important;}
+div[data-testid="stAlert"]{color:#000000 !important; background-color:#FFFFFF !important;}
 div[data-testid="stAlert"] p{color:#000000 !important; font-size:18px !important; font-weight:700 !important;}
 </style>
 """,unsafe_allow_html=True)
