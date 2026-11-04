@@ -86,7 +86,7 @@ def youtube_id(url):
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
-USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker - Hon. Lawrence Ssango","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
+USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
 LOGIN_USERS=list(USERS.keys())
 ELECTION_POS=["president","vice_president","speaker","finance","general_secretary","information","grc_male","grc_female","hostel_male","hostel_female","nursing_affairs"]
 REPORT_TYPES=["Weekly","Monthly","Financial","Activity","GRC","Hostel","Class","Electoral","Disciplinary","GP","Audit","Budget","Other"]
@@ -423,4 +423,4 @@ elif page.startswith("Audit"):
     st.subheader("Audit Log"); audit=load_json(FILES["audit"],st.session_state.audit)
     if audit: st.dataframe(pd.DataFrame(reversed(audit)),use_container_width=True)
 
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | Friendly and Clear to See | All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year}</p>",unsafe_allow_html=True)
+st.markdown("---"); st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | Friendly and Clear to See | All Rights Reserved To The Maker, Right Hon. Speaker | {dt.now().year}</p>",unsafe_allow_html=True)
