@@ -6,8 +6,6 @@ os.makedirs("data/media_files", exist_ok=True)
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
 
-MAKER = "speaker"
-LOCK_MSG = "LOCKED - Only The Maker, Right Hon. Speaker Hon. Lawrence Ssango, Can Make Changes / Delete / Change Settings. You Can Upload, Download, Vote, Join Calls, Submit Reports, Type And Copy Paste."
 DEFAULT_MEET_LINK = "https://meet.google.com/abc-defg-hij"
 
 FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json"}
@@ -65,15 +63,15 @@ def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
         show_space("unasnm")
     with c_mid:
         show_space("group_icon")
-        st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM<br>Governance Portal</h2>", unsafe_allow_html=True)
-        st.markdown(f"<p style='text-align:center;color:#000000;'>{subtitle}</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align:center;color:#0B3D1E;font-size:44px;line-height:1.1;'>UNIK BEC UNASNM<br>Governance Portal</h1>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align:center;color:#000000;font-size:26px;font-weight:900;'>{subtitle}</p>", unsafe_allow_html=True)
     with c_right:
         show_space("university")
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
 USERS={"principal":"Principal - School Head","patron":"Hon. Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker - Hon. Lawrence Ssango","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
-LOGIN_USERS=list(USERS.keys()); SUPER_4=["principal","patron","president","speaker"]; FINANCE_5=["principal","patron","president","speaker","finance"]
+LOGIN_USERS=list(USERS.keys())
 ELECTION_POS=["president","vice_president","speaker","finance","general_secretary","information","grc_male","grc_female","hostel_male","hostel_female","nursing_affairs"]
 REPORT_TYPES=["Weekly","Monthly","Financial","Activity","GRC","Hostel","Class","Electoral","Disciplinary","GP","Audit","Budget","Other"]
 DOC_CATS=["Constitution","Budget","Minutes","Finance Excel","Finance PPT","Other Secret","PDF Documents","Excel Sheets","PowerPoint","Public Information","Meeting Minutes","Academic","Welfare","Nursing Affairs"]
@@ -86,7 +84,6 @@ for k,f in FILES.items():
 if 'logged_in' not in st.session_state: st.session_state.logged_in=False
 if 'user' not in st.session_state: st.session_state.user=""
 
-# CLEAR COLOURS FOR WEAK EYES - DARK TEXT ON LIGHT, WHITE TEXT ONLY ON DARK GREEN
 st.markdown("""
 <style>
 .stApp{background-color:#FFF8E1 !important; color:#000000 !important;}
@@ -124,26 +121,26 @@ def download_and_keep(fp,fname,key):
 
 def retention_badge(item):
     if item.get("expires"):
-        if is_expired(item): return "EXPIRED - Download quickly, Maker can Renew"
+        if is_expired(item): return "EXPIRED - Download quickly"
         d=days_left(item)
         return f"Keeps on portal: {d} days left | Expires: {item['expires']} | Download to phone to keep forever"
     return "Keeps: Forever"
 
 if is_public:
     show_header("One Email = One Vote")
-    st.markdown("<h3 style='text-align:center;color:#0B3D1E;'>PUBLIC ELECTORAL COMMISSION</h3>",unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center;color:#0B3D1E;font-size:32px;'>PUBLIC ELECTORAL COMMISSION</h3>",unsafe_allow_html=True)
     t1,t2,t3=st.tabs(["Apply Candidate","Vote One Email Once","Live Results"])
     with t1:
         rp=st.selectbox("Position",ELECTION_POS,format_func=lambda x:USERS[x],key="pub_pos")
         rn=st.text_input("Full Names *",key="pub_name"); rclass=st.text_input("Class *",key="pub_class")
         remail=st.text_input("Email *",key="pub_email"); rreason=st.text_area("Why vote you? *",key="pub_reason")
         rphoto=st.file_uploader("Passport Photo * JPG/PNG",type=["jpg","png","jpeg"],key="pub_photo")
-        if st.button("Submit (Speaker Approves)",type="primary",use_container_width=True):
+        if st.button("Submit",type="primary",use_container_width=True):
             if not rn or not rphoto: st.error("Full Names + Photo required")
             else:
                 nid=int(time.time()); fpath=f"data/media_files/cand_{nid}.jpg"; open(fpath,'wb').write(rphoto.getvalue())
                 st.session_state.pending.append({"id":nid,"position":rp,"name":rn,"class":rclass,"email":remail,"reason":rreason,"photo_path":fpath,"date":str(dt.now())[:16]})
-                save_json(FILES["pending"],st.session_state.pending); st.success("Sent to Speaker!"); st.balloons()
+                save_json(FILES["pending"],st.session_state.pending); st.success("Sent!"); st.balloons()
     with t2:
         voter_email=st.text_input("University Email *",key="pub_voter_email")
         if voter_email and "@" in voter_email:
@@ -172,22 +169,22 @@ if not st.session_state.logged_in:
     st.info(f"MEET LINK: {MEET_LINK}")
     PUBLIC_VOTE_LINK="https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/?public=vote"
     st.markdown(f"### PUBLIC VOTE FOR ALL STUDENTS\nLink: {PUBLIC_VOTE_LINK}")
+    st.markdown("## LOGIN HERE - CHOOSE YOUR OFFICE, TYPE PASSWORD")
     u=st.selectbox("Select Office (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
     p=st.text_input("Password - My Portal",type="password",key="pass")
+    st.write("Password is unik2025 if you have not changed it.")
     if st.button("LOGIN TO PORTAL",type="primary",use_container_width=True):
         if p==st.session_state.passwords.get(u,"unik2025"): st.session_state.logged_in=True; st.session_state.user=u; st.rerun()
         else: st.error("Wrong password! Default unik2025")
     st.stop()
 
-user=st.session_state.user; user_full=USERS[user]; CAN_CHANGE=(user==MAKER)
+user=st.session_state.user; user_full=USERS[user]
 reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FILES["media"],st.session_state.media); docs_uploaded=load_json(FILES["uploaded"],st.session_state.uploaded); votes=load_json(FILES["votes"],st.session_state.votes)
 notifs_now=load_json(FILES["notif"],[])
 
 with st.sidebar:
     st.markdown("### UNIK BEC - Chats")
     st.markdown(f"Hello, {user_full}")
-    if CAN_CHANGE: st.success("MAKER MODE - Hon. Lawrence Ssango")
-    else: st.success("YOU CAN: Upload ANY FILE, Download to Phone, Vote, Join, Submit")
     st.markdown(f"[JOIN GOOGLE MEET]({MEET_LINK})")
     search=st.text_input("Search departments",key="wa_search",placeholder="Search...")
     st.markdown("All | Unread | Favourites | Groups  Notifications: "+str(len(notifs_now))+"  13 Online")
@@ -201,19 +198,12 @@ with st.sidebar:
     st.markdown("YOUR PHONE SPACE")
     st.markdown("Download any file, it stays in your phone / laptop Files forever, even after portal time ends.")
     for _n in reversed(notifs_now[-5:]): st.info(f"{_n['title']} - {_n['body'][:60]}")
-    if CAN_CHANGE:
-        with st.expander("Change My Password - Maker Only"):
-            cur=st.text_input("Current",type="password",key="cur_pw"); new=st.text_input("New",type="password",key="new_pw"); conf=st.text_input("Confirm",type="password",key="conf_pw")
-            if st.button("Save My Portal",key="save_pw"):
-                if cur!=st.session_state.passwords.get(user,"unik2025"): st.error("Wrong current")
-                elif new!=conf: st.error("Don't match")
-                else: st.session_state.passwords[user]=new; save_json(FILES["passwords"],st.session_state.passwords); st.success("Changed!")
     if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
 
 show_header("Organised like WhatsApp. Colourful. Easy. Clear to see.")
 st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
-st.success("ALL 13 CAN: Upload ANY FILE, Download to Phone / Laptop, Vote, Join Meet, Submit. ONLY MAKER CAN: Delete, Renew, Approve, Change Settings.")
-st.warning("PHONE SPACE: Portal cannot write straight into your phone. Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
+st.success("ALL 13 CAN: Upload ANY FILE, Download to Phone / Laptop, Vote, Join Meet, Submit, Open Every Department, See Every Photo.")
+st.warning("PHONE SPACE: Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
 st.markdown(f"### {page}  |  13 departments  |  Online now")
 st.divider()
 
@@ -225,7 +215,7 @@ if page.startswith("Dashboard"):
 
 elif page.startswith("Media"):
     st.subheader("Media Gallery - ANY FILE - MPEG, MP4, MP3, JPG, PDF, ZIP")
-    st.info("Upload here, choose how long to keep on portal. Download to phone = keep forever in your phone.")
+    st.info("Upload here, choose how long to keep on portal. Download to phone = keep forever in your phone. Everyone can see every photo here.")
     med=load_json(FILES["media"],st.session_state.media)
     mt=st.text_input("Media Title *",key="media_t")
     keep_label=st.selectbox("Keep on portal for:",list(KEEP_OPTIONS.keys()),key="media_keep")
@@ -236,11 +226,11 @@ elif page.startswith("Media"):
             nid=int(time.time()); fpath=f"data/media_files/media_{nid}_{mf.name.replace(' ','_')}"; open(fpath,'wb').write(mf.getvalue())
             med.append({"id":nid,"title":mt.strip(),"file_name":mf.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep_label,"expires":expiry_str(keep_days(keep_label))}); save_json(FILES["media"],med); st.success("Saved! Now download it to your phone to keep forever!"); st.balloons(); st.rerun()
     q=st.text_input("Search media by name",key="media_q")
-    show_expired=st.checkbox("Show expired files too (so Maker can Renew)",key="media_exp")
+    show_expired=st.checkbox("Show expired files too",key="media_exp")
     cols=st.columns(3)
     shown=[m for m in reversed(med) if (not q or q.lower() in m['title'].lower()+m.get('file_name','').lower())]
     for idx,m in enumerate(shown):
-        if is_expired(m) and not show_expired and not CAN_CHANGE: continue
+        if is_expired(m) and not show_expired: continue
         with cols[idx%3]:
             with st.container(border=True):
                 st.write(f"{m['title']} - {m['by']}")
@@ -249,18 +239,17 @@ elif page.startswith("Media"):
                 if fp and os.path.exists(fp):
                     show_any_file(fp,m.get('file_name',''))
                     download_and_keep(fp,m.get('file_name',''),key=f"dl_med_{m['id']}_{idx}")
-                if CAN_CHANGE:
-                    c1,c2=st.columns(2)
-                    if c1.button("Renew +30 Days",key=f"ren_med_{m['id']}_{idx}"):
-                        for x in med:
-                            if x['id']==m['id']: x['expires']=(dt.now()+timedelta(days=30)).strftime("%Y-%m-%d %H:%M"); x['keep']="Renewed +30 Days"
-                        save_json(FILES["media"],med); st.success("Renewed! Keeps 30 more days."); st.rerun()
-                    if c2.button("Delete Forever",key=f"del_med_{m['id']}_{idx}"):
-                        med=[x for x in med if x['id']!=m['id']]
-                        try:
-                            if fp and os.path.exists(fp): os.remove(fp)
-                        except: pass
-                        save_json(FILES["media"],med); st.success("Deleted Forever from portal. Phone copies stay."); st.rerun()
+                c1,c2=st.columns(2)
+                if c1.button("Renew +30 Days",key=f"ren_med_{m['id']}_{idx}"):
+                    for x in med:
+                        if x['id']==m['id']: x['expires']=(dt.now()+timedelta(days=30)).strftime("%Y-%m-%d %H:%M"); x['keep']="Renewed +30 Days"
+                    save_json(FILES["media"],med); st.success("Renewed!"); st.rerun()
+                if c2.button("Delete Forever",key=f"del_med_{m['id']}_{idx}"):
+                    med=[x for x in med if x['id']!=m['id']]
+                    try:
+                        if fp and os.path.exists(fp): os.remove(fp)
+                    except: pass
+                    save_json(FILES["media"],med); st.success("Deleted from portal. Phone copies stay."); st.rerun()
 
 elif page.startswith("Documents"):
     st.subheader("Documents - ANY FILE + Keep Time")
@@ -279,12 +268,11 @@ elif page.startswith("Documents"):
             if doc.get('file_path',''):
                 show_any_file(doc['file_path'],doc.get('file_name',''))
                 download_and_keep(doc['file_path'],doc.get('file_name',''),key=f"dl_doc_{doc['id']}_{idx}")
-            if CAN_CHANGE:
-                if st.button(f"Renew +30 Days - {doc['title']}",key=f"ren_doc_{doc['id']}_{idx}"):
-                    for x in docs:
-                        if x['id']==doc['id']: x['expires']=(dt.now()+timedelta(days=30)).strftime("%Y-%m-%d %H:%M")
-                    save_json(FILES["uploaded"],docs); st.success("Renewed!"); st.rerun()
-                if st.button(f"Delete Forever - {doc['title']} - Maker Only",key=f"del_doc_{doc['id']}_{idx}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
+            if st.button(f"Renew +30 Days - {doc['title']}",key=f"ren_doc_{doc['id']}_{idx}"):
+                for x in docs:
+                    if x['id']==doc['id']: x['expires']=(dt.now()+timedelta(days=30)).strftime("%Y-%m-%d %H:%M")
+                save_json(FILES["uploaded"],docs); st.success("Renewed!"); st.rerun()
+            if st.button(f"Delete Forever - {doc['title']}",key=f"del_doc_{doc['id']}_{idx}"): docs=[x for x in docs if x['id']!=doc['id']]; save_json(FILES["uploaded"],docs); st.success("Deleted!"); st.rerun()
 
 elif page.startswith("Public"):
     st.subheader("Public Portal - WhatsApp Group Chat")
@@ -307,12 +295,10 @@ elif page.startswith("Meeting"):
     st.success(f"Current Link: {MEET_LINK}")
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:20px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW</a>", unsafe_allow_html=True)
     st.code(MEET_LINK)
-    if CAN_CHANGE:
-        new_link=st.text_input("Paste NEW Google Meet Link",value=MEET_LINK,key="new_meet_link")
-        if st.button("SAVE LINK - MAKER ONLY",type="primary",use_container_width=True):
-            if "meet.google.com" not in new_link: st.error("Not a Meet link!")
-            else: save_json(FILES["meetlink"],{"link":new_link.strip(),"by":user_full,"date":str(dt.now())}); st.success("Saved!"); st.rerun()
-    else: st.error(LOCK_MSG)
+    new_link=st.text_input("Paste NEW Google Meet Link",value=MEET_LINK,key="new_meet_link")
+    if st.button("SAVE LINK",type="primary",use_container_width=True):
+        if "meet.google.com" not in new_link: st.error("Not a Meet link!")
+        else: save_json(FILES["meetlink"],{"link":new_link.strip(),"by":user_full,"date":str(dt.now())}); st.success("Saved!"); st.rerun()
 
 elif page.startswith("My Personal"):
     st.subheader("My Personal Portal - ONLY YOU")
@@ -335,11 +321,9 @@ elif page.startswith("Submit"):
         reports.append({"id":int(time.time()),"date":dt.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip()}); save_json(FILES["reports"],reports); st.success("Saved!"); st.balloons()
 
 elif page.startswith("Private"):
-    st.subheader("Private SUPER 4 ONLY")
-    if user in SUPER_4:
-        for r in reversed(load_json(FILES["reports"],st.session_state.reports)):
-            with st.expander(f"{r['title']} - {r['from_name']}"): st.info(r['content'])
-    else: st.error("SUPER 4 ONLY")
+    st.subheader("Private SUPER 4")
+    for r in reversed(load_json(FILES["reports"],st.session_state.reports)):
+        with st.expander(f"{r['title']} - {r['from_name']}"): st.info(r['content'])
 
 elif page.startswith("Electoral"):
     st.subheader("Electoral OPEN")
@@ -348,7 +332,7 @@ elif page.startswith("Electoral"):
     for pc in reversed(pend):
         with st.container(border=True):
             st.write(f"{pc['name']} - {USERS[pc['position']]}"); st.info(pc.get('reason',''))
-            if CAN_CHANGE and st.button(f"Approve {pc['name']}",key=f"ap_{pc['id']}"):
+            if st.button(f"Approve {pc['name']}",key=f"ap_{pc['id']}"):
                 st.session_state.candidates.append(pc); st.session_state.pending=[x for x in st.session_state.pending if x['id']!=pc['id']]; save_json(FILES["candidates"],st.session_state.candidates); save_json(FILES["pending"],st.session_state.pending); st.success("Approved!"); st.rerun()
     for cc in cand: st.write(f"{cc['name']} - {USERS[cc['position']]} - {len([v for v in votes if v['candidate_id']==cc['id']])} votes")
 
@@ -365,19 +349,17 @@ elif page.startswith("GP"):
     for gpr in reversed(gp): st.info(f"{gpr['title']} - {gpr['by']} - {gpr['content']}")
 
 elif page.startswith("Finance"):
-    st.subheader("Finance - 5 ONLY")
-    if user in FINANCE_5:
-        fin=load_json(FILES["finance"],st.session_state.finance)
-        f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload ANY FILE",key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
-        if st.button("Save Finance",type="primary",key="fin_s2"):
-            fname=""; fpath=""
-            if f_f: fname=f_f.name.replace(" ","_"); fpath=f"data/documents/finance_{int(time.time())}_{fname}"; open(fpath,'wb').write(f_f.getvalue())
-            fin.append({"id":int(time.time()),"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"],fin); st.success("Saved!"); st.rerun()
-        for idx,fd in enumerate(reversed(fin)):
-            with st.container(border=True):
-                st.markdown(f"{fd['title']} - UGX {fd.get('amount',0):,}")
-                if fd.get('file_path',''): show_any_file(fd['file_path'],fd.get('file_name','')); download_and_keep(fd['file_path'],fd.get('file_name',''),key=f"dl_fin_{fd['id']}_{idx}")
-    else: st.error("Finance is 5 ONLY")
+    st.subheader("Finance")
+    fin=load_json(FILES["finance"],st.session_state.finance)
+    f_t=st.text_input("Finance Title *",key="fin_t"); f_d=st.text_area("Description",key="fin_d"); f_f=st.file_uploader("Upload ANY FILE",key="fin_f"); f_amount=st.number_input("Amount UGX",min_value=0,step=1000,key="fin_amount")
+    if st.button("Save Finance",type="primary",key="fin_s2"):
+        fname=""; fpath=""
+        if f_f: fname=f_f.name.replace(" ","_"); fpath=f"data/documents/finance_{int(time.time())}_{fname}"; open(fpath,'wb').write(f_f.getvalue())
+        fin.append({"id":int(time.time()),"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"],fin); st.success("Saved!"); st.rerun()
+    for idx,fd in enumerate(reversed(fin)):
+        with st.container(border=True):
+            st.markdown(f"{fd['title']} - UGX {fd.get('amount',0):,}")
+            if fd.get('file_path',''): show_any_file(fd['file_path'],fd.get('file_name','')); download_and_keep(fd['file_path'],fd.get('file_name',''),key=f"dl_fin_{fd['id']}_{idx}")
 
 elif page.startswith("Secret"):
     st.subheader("Secret"); sec=load_json(FILES["docs"],st.session_state.docs)
@@ -399,4 +381,4 @@ elif page.startswith("Audit"):
     st.subheader("Audit Log"); audit=load_json(FILES["audit"],st.session_state.audit)
     if audit: st.dataframe(pd.DataFrame(reversed(audit)),use_container_width=True)
 
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | Friendly and Clear to See | Only Maker Can Delete / Renew | All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year}</p>",unsafe_allow_html=True)
+st.markdown("---"); st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | Friendly and Clear to See | All Rights Reserved To The Maker, Right Hon. Speaker Hon. Lawrence Ssango | {dt.now().year}</p>",unsafe_allow_html=True)
