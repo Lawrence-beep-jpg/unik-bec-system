@@ -12,6 +12,7 @@ OFFICE_LINK = "https://www.office.com"
 WORD_LINK = "https://word.cloud.microsoft"
 EXCEL_LINK = "https://excel.cloud.microsoft"
 PPT_LINK = "https://powerpoint.cloud.microsoft"
+BIG_FOUR = ["president","patron","speaker","principal"]
 
 FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json"}
 
@@ -45,7 +46,6 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
-# TWO BADGES ADDED IN THE CODE - LEFT UNIVERSITY, RIGHT NATIONAL UNASNM - NO FILE NEEDED
 def badge_html(kind):
     if kind=="university":
         return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#0B3D1E;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>✚</div><div style='color:#FFD700;font-weight:900;font-size:22px;line-height:1.1;'>UNIVERSITY<br>OF KISUBI</div><div style='color:#FFFFFF;font-weight:900;font-size:18px;'>UniK</div><div style='color:#FFFFFF;font-size:15px;font-weight:700;'>📖 In Virtue We Educate</div><div style='color:#FFD700;font-size:14px;font-weight:700;'>EST. 2004</div></div>"""
@@ -86,7 +86,7 @@ def youtube_id(url):
 
 MEET_LINK=get_meet_link()
 is_public=st.query_params.get("public","")=="vote"
-USERS={"principal":"Principal - School Head","patron":"Patron","president":"His Excellency President","vice_president":"Hon. Vice President","speaker":"Right Hon. Speaker","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
+USERS={"principal":"Principal - School Head","patron":"Patron","president":"His Excellency President","vice_president":"Vice President","speaker":"Right Hon. Speaker","general_secretary":"Hon. General Secretary","finance":"Hon. Finance Secretary","information":"Hon. Information Secretary","class_rep":"Hon. Class Rep","grc_male":"Hon. GRC Male","grc_female":"Hon. GRC Female","hostel_male":"Hon. Hostel Male","hostel_female":"Hon. Hostel Female","nursing_affairs":"Hon. Nursing Affairs"}
 LOGIN_USERS=list(USERS.keys())
 ELECTION_POS=["president","vice_president","speaker","finance","general_secretary","information","grc_male","grc_female","hostel_male","hostel_female","nursing_affairs"]
 REPORT_TYPES=["Weekly","Monthly","Financial","Activity","GRC","Hostel","Class","Electoral","Disciplinary","GP","Audit","Budget","Other"]
@@ -99,6 +99,7 @@ for k,f in FILES.items():
         else: st.session_state[k]=load_json(f,[])
 if 'logged_in' not in st.session_state: st.session_state.logged_in=False
 if 'user' not in st.session_state: st.session_state.user=""
+if 'acting_as' not in st.session_state: st.session_state.acting_as=""
 
 st.markdown("""
 <style>
@@ -187,12 +188,21 @@ if not st.session_state.logged_in:
     st.markdown(f"### PUBLIC VOTE FOR ALL STUDENTS\nLink: {PUBLIC_VOTE_LINK}")
     st.markdown("## LOGIN HERE - CHOOSE YOUR OFFICE, TYPE PASSWORD")
     st.write("Every member does the same: open this link, choose your office, type password, tap LOGIN. No other step.")
-    u=st.selectbox("Select Office (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
-    p=st.text_input("Password - My Portal",type="password",key="pass")
-    st.write("Password is unik2025 for all 13, unless you changed it before.")
+    st.write("BIG FOUR CAN OPEN EVERY OFFICE: President, Patron, Speaker, Principal. Even if that person changed their password.")
+    st.write("Big Four, do this: Your Office = your own office. Office To Open = the office you want to open. Password = YOUR OWN Big Four password. It will open, even if they changed theirs.")
+    u=st.selectbox("Your Office - Who Are You? (13)",LOGIN_USERS,format_func=lambda x:USERS[x],key="login")
+    target=st.selectbox("Office To Open - Normally Same As Yours",LOGIN_USERS,format_func=lambda x:USERS[x],key="login_target")
+    p=st.text_input("Password - Your Own Password",type="password",key="pass")
+    st.write("First time password is unik2025 for all 13. After you change it in My Personal Portal, use your new one.")
     if st.button("LOGIN TO PORTAL",type="primary",use_container_width=True):
-        if p==st.session_state.passwords.get(u,"unik2025"): st.session_state.logged_in=True; st.session_state.user=u; st.rerun()
-        else: st.error("Wrong password! Default unik2025")
+        pw_dict=load_json(FILES["passwords"],st.session_state.passwords)
+        if u==target and p==pw_dict.get(u,"unik2025"):
+            st.session_state.logged_in=True; st.session_state.user=target; st.session_state.acting_as=""; st.rerun()
+        elif u!=target and u in BIG_FOUR and p==pw_dict.get(u,"unik2025"):
+            st.session_state.logged_in=True; st.session_state.user=target; st.session_state.acting_as=u; st.rerun()
+        elif u!=target and u not in BIG_FOUR:
+            st.error("Only Big Four can open another office. Choose Office To Open same as Your Office.")
+        else: st.error("Wrong password! Use your own password. Default unik2025 if you never changed it.")
     st.stop()
 
 user=st.session_state.user; user_full=USERS[user]
@@ -200,11 +210,14 @@ reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FI
 
 show_header("Organised, colourful, easy. Everything visible on this big screen.")
 st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW - TAP HERE</a>", unsafe_allow_html=True)
-st.markdown(f"Hello, {user_full} | All 13 Online Now")
+if st.session_state.acting_as:
+    st.warning(f"Big Four access: You are {USERS[st.session_state.acting_as]}, you opened {user_full}. You can see everything here, even if they changed their password.")
+else:
+    st.markdown(f"Hello, {user_full} | All 13 Online Now")
 office_buttons()
 PAGES=["Dashboard","My Personal Portal","Public Portal OPEN","Meeting - GOOGLE MEET DIRECT","Submit Report","Private SUPER 4","Electoral OPEN","Disciplinary OPEN","GP OPEN","Finance - MICROSOFT TEAMS AND OFFICE","Secret OPEN","Documents OPEN","Media Gallery OPEN - ANY FILE","YouTube - TAGGED VIDEOS","Cabinet Archive OPEN","Audit Log"]
 page=st.selectbox("CHOOSE DEPARTMENT - ALL VISIBLE HERE, TAP ONE",PAGES,key="top_page")
-if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
+if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.session_state.acting_as=""; st.rerun()
 st.success("ALL 13 CAN: Upload ANY FILE direct, Download to Phone / Laptop, Vote, Join Meet, Join Teams, Use Office, Submit, Open Every Department, See Every Photo. No copy out.")
 st.warning("PHONE SPACE: Tap DOWNLOAD TO PHONE, it saves in your phone Downloads / Files and stays forever. Portal copy can expire after 7 days / 30 days / 1 year, your phone copy does not expire.")
 st.markdown(f"### {page}  |  13 departments  |  Online now")
@@ -332,6 +345,22 @@ elif page.startswith("Meeting"):
 
 elif page.startswith("My Personal"):
     st.subheader("My Personal Portal - ONLY YOU")
+    st.markdown("### CHANGE MY PASSWORD TO MY OWN - ONLY YOU")
+    st.write("Type your old password, then type your new password twice. Tap Save. From now, only your new password will open your office. Big Four can still open it with their own password.")
+    old_pw=st.text_input("Old Password",type="password",key="chg_old")
+    new_pw=st.text_input("New Password - Your Own",type="password",key="chg_new")
+    new_pw2=st.text_input("New Password Again",type="password",key="chg_new2")
+    if st.button("SAVE MY NEW PASSWORD",type="primary",use_container_width=True,key="chg_save"):
+        pw_dict=load_json(FILES["passwords"],st.session_state.passwords)
+        real_user=st.session_state.acting_as if st.session_state.acting_as else user
+        if old_pw!=pw_dict.get(real_user,"unik2025"): st.error("Old password is wrong!")
+        elif not new_pw or len(new_pw)<4: st.error("New password must be 4 or more letters / numbers!")
+        elif new_pw!=new_pw2: st.error("New passwords do not match! Type same twice!")
+        else:
+            pw_dict[real_user]=new_pw; save_json(FILES["passwords"],pw_dict); st.session_state.passwords=pw_dict; st.success("Saved! Your new password works now. Remember it well."); st.balloons()
+    if user in BIG_FOUR:
+        st.info("You are Big Four. You can open every office, even if they changed their password. Logout, then on login choose your office and the office you want to open.")
+    st.divider()
     office_buttons()
     personal=load_json(FILES["personal"],st.session_state.personal); my_personal=[p for p in personal if p['owner']==user]
     pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes *",key="pers_c"); pf=st.file_uploader("File - ANY FILE",key="pers_f")
