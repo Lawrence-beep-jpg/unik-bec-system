@@ -49,19 +49,7 @@ def days_left(item):
         return max(0,(exp-dt.now()).days)
     except: return 9999
 
-# GROUP ICON IS INSIDE THIS CODE - GREEN AND GOLD - CROSS, STETHOSCOPE, BOOK, CAP - NO PHOTO NEEDED
-GROUP_ICON_HTML = """
-<div style="text-align:center;">
-<div style="width:220px;height:220px;margin:0 auto;background:#0B6B3A;border:8px solid #D4AF37;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#FFFFFF;">
-<div style="font-size:64px;line-height:1;color:#FFFFFF;">✚</div>
-<div style="font-size:52px;line-height:1;">🩺</div>
-<div style="font-size:40px;line-height:1;">📖 👩‍⚕️</div>
-<div style="font-size:16px;font-weight:900;color:#FFD700;letter-spacing:2px;">NURSING</div>
-<div style="font-size:13px;font-weight:900;color:#FFFFFF;">UNIK BEC UNASNM</div>
-</div>
-<div style="height:10px;"></div>
-</div>
-"""
+# SPACE ONLY LEFT AND RIGHT - NO WORDS - GROUP ICON IN MIDDLE
 def find_badge(name):
     for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
         if os.path.exists(f): return f
@@ -77,17 +65,22 @@ def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
     with c_left:
         show_space("unasnm")
     with c_mid:
-        st.markdown(GROUP_ICON_HTML, unsafe_allow_html=True)
+        show_space("group_icon")
         st.markdown("<h2 style='text-align:center;color:#0B3D1E;'>UNIK BEC UNASNM<br>Governance Portal</h2>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align:center;color:#000000;'>{subtitle}</p>", unsafe_allow_html=True)
     with c_right:
         show_space("university")
 def badge_spaces_for_maker():
-    c1, c3 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     with c1:
         left_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_left_badge", label_visibility="collapsed")
         if left_file:
             open("unasnm.jpg",'wb').write(left_file.getvalue())
+            st.rerun()
+    with c2:
+        group_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_group_badge", label_visibility="collapsed")
+        if group_file:
+            open("group_icon.jpg",'wb').write(group_file.getvalue())
             st.rerun()
     with c3:
         right_file = st.file_uploader(" ", type=["jpg","png","jpeg"], key="maker_right_badge", label_visibility="collapsed")
