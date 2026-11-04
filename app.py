@@ -56,7 +56,7 @@ def show_space(name):
     if f:
         st.image(f, use_container_width=True)
     else:
-        st.markdown("<div style='height:80px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:220px;'></div>", unsafe_allow_html=True)
 def show_header(subtitle="Friendly, colourful, easy. Tap green, join Meet."):
     c_left, c_mid, c_right = st.columns([2,3,2])
     with c_left:
@@ -89,11 +89,12 @@ st.markdown("""
 .stApp p, .stApp div, .stApp label, .stApp span{color:#000000 !important; font-size:18px !important; font-weight:600 !important;}
 h1,h2,h3{color:#0B3D1E !important; font-weight:900 !important;}
 input, textarea, select{color:#000000 !important; background-color:#FFFFFF !important; font-size:18px !important; font-weight:700 !important; border:2px solid #0B3D1E !important;}
-section[data-testid="stSidebar"]{width:220px !important; min-width:220px !important; background-color:#FFF8E1 !important; color:#000000 !important; border-right:3px solid #0B6B3A !important;}
-div[data-testid="stSidebar"]{background-color:#FFF8E1 !important; color:#000000 !important;}
+div[data-testid="stSidebar"]{background-color:#FFF8E1 !important; color:#000000 !important; border-right:3px solid #0B6B3A !important;}
 div[data-testid="stSidebar"] p, div[data-testid="stSidebar"] div, div[data-testid="stSidebar"] label, div[data-testid="stSidebar"] span, div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3{color:#000000 !important; font-size:18px !important; font-weight:700 !important; background-color:transparent !important;}
 div[data-testid="stSidebar"] input{color:#000000 !important; background-color:#FFFFFF !important; border:2px solid #0B3D1E !important;}
 div[data-testid="stSidebar"] a{color:#0B6B3A !important; font-weight:900 !important;}
+div[data-testid="stSidebar"] [data-testid="stAlert"]{background-color:#FFFFFF !important; color:#000000 !important;}
+div[data-testid="stSidebar"] [data-testid="stAlert"] p{color:#000000 !important;}
 button[kind="primary"]{background-color:#075E54 !important; color:#FFFFFF !important; border-radius:20px !important; font-size:18px !important; font-weight:900 !important;}
 button[kind="primary"] p, button[kind="primary"] span{color:#FFFFFF !important;}
 button[kind="secondary"]{background-color:#FFFFFF !important; color:#000000 !important; border:2px solid #075E54 !important; font-size:18px !important; font-weight:900 !important;}
@@ -184,10 +185,21 @@ reports=load_json(FILES["reports"],st.session_state.reports); media=load_json(FI
 notifs_now=load_json(FILES["notif"],[])
 
 with st.sidebar:
-    st.markdown("### UNIK BEC")
+    st.markdown("### UNIK BEC - Chats")
     st.markdown(f"Hello, {user_full}")
+    st.markdown(f"[JOIN GOOGLE MEET]({MEET_LINK})")
+    search=st.text_input("Search departments",key="wa_search",placeholder="Search...")
+    st.markdown("All | Unread | Favourites | Groups  Notifications: "+str(len(notifs_now))+"  13 Online")
+    st.markdown("STATUS - All 13 Online Now")
+    for _u in LOGIN_USERS: st.markdown(f"Online: {USERS[_u]}")
+    st.markdown("---")
     PAGES=["Dashboard","My Personal Portal","Public Portal OPEN","Meeting - GOOGLE MEET DIRECT","Submit Report","Private SUPER 4","Electoral OPEN","Disciplinary OPEN","GP OPEN","Finance 5 ONLY","Secret OPEN","Documents OPEN","Media Gallery OPEN - ANY FILE","Cabinet Archive OPEN","Audit Log"]
+    if search: PAGES=[p for p in PAGES if search.lower() in p.lower()] or PAGES
     page=st.radio("Departments",PAGES,key="wa_page",label_visibility="collapsed")
+    st.markdown("---")
+    st.markdown("YOUR PHONE SPACE")
+    st.markdown("Download any file, it stays in your phone / laptop Files forever, even after portal time ends.")
+    for _n in reversed(notifs_now[-5:]): st.info(f"{_n['title']} - {_n['body'][:60]}")
     if st.button("Logout",use_container_width=True): st.session_state.logged_in=False; st.session_state.user=""; st.rerun()
 
 show_header("Organised like WhatsApp. Colourful. Easy. Clear to see.")
@@ -285,17 +297,13 @@ elif page.startswith("Meeting"):
     st.success(f"Current Link: {MEET_LINK}")
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:20px;display:block;text-align:center;'>JOIN GOOGLE MEET NOW</a>", unsafe_allow_html=True)
     st.code(MEET_LINK)
+    new_link=st.text_input("Paste NEW Google Meet Link",value=MEET_LINK,key="new_meet_link")
+    if st.button("SAVE LINK",type="primary",use_container_width=True):
+        if "meet.google.com" not in new_link: st.error("Not a Meet link!")
+        else: save_json(FILES["meetlink"],{"link":new_link.strip(),"by":user_full,"date":str(dt.now())}); st.success("Saved!"); st.rerun()
 
 elif page.startswith("My Personal"):
     st.subheader("My Personal Portal - ONLY YOU")
-    if user=="speaker":
-        st.markdown("### Speaker Only - Small Place Inside Here")
-        st.write("Change Meet link here only. It is not on the left side, it does not block the big screen.")
-        new_link=st.text_input("Paste NEW Google Meet Link",value=MEET_LINK,key="speaker_meet_link")
-        if st.button("SAVE MEET LINK",type="primary",use_container_width=True):
-            if "meet.google.com" not in new_link: st.error("Not a Meet link!")
-            else: save_json(FILES["meetlink"],{"link":new_link.strip(),"by":user_full,"date":str(dt.now())}); st.success("Saved!"); st.rerun()
-        st.divider()
     personal=load_json(FILES["personal"],st.session_state.personal); my_personal=[p for p in personal if p['owner']==user]
     pt=st.text_input("Title *",key="pers_t"); pc=st.text_area("Notes *",key="pers_c"); pf=st.file_uploader("File - ANY FILE",key="pers_f")
     if st.button("Save PRIVATE",type="primary",use_container_width=True,key="pers_s"):
