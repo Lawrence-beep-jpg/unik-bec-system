@@ -84,7 +84,6 @@ def migrate_phrase(old_phrase, new_phrase):
             if not raw:
                 continue
             dec = decrypt_with(old_phrase, raw)
-            # Only re-encrypt if old phrase really opened it, or file was plain json
             if dec == raw and raw[:1] != b'{':
                 continue
             with open(_p, 'wb') as f:
@@ -408,7 +407,9 @@ if page.startswith("Big Four"):
     st.divider()
     st.markdown("### CHANGE SECRET PHRASE HERE - INSIDE YOUR OFFICE - BIG FOUR ONLY")
     st.write("This is the secret phrase that locks all files. Change it here, do not change it in the code again. Write the new phrase down in a safe book, tell no one. If you lose it, old files cannot be opened.")
-    old_ph = st.text_input("Old Secret Phrase", type="password", key="old_phrase")
+    st.success("Old Secret Phrase is filled by itself. Do not type it. Only type your new phrase twice below.")
+    old_ph = CURRENT_PHRASE
+    st.text_input("Old Secret Phrase - Filled By Itself, Do Not Type", value=CURRENT_PHRASE, type="password", disabled=True, key="old_phrase")
     new_ph = st.text_input("New Secret Phrase - Your Own, long", type="password", key="new_phrase")
     new_ph2 = st.text_input("New Secret Phrase Again", type="password", key="new_phrase2")
     if st.button("SAVE NEW SECRET PHRASE AND RE-LOCK ALL FILES", type="primary", use_container_width=True, key="save_phrase"):
