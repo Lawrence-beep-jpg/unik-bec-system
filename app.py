@@ -98,7 +98,7 @@ EXCEL_LINK = "https://excel.cloud.microsoft"
 PPT_LINK = "https://powerpoint.cloud.microsoft"
 BIG_FOUR = ["president","patron","speaker","principal"]
 PORTAL_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/"
-FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json","blocked":"data/blocked.json"}
+FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json","blocked":"data/blocked.json","super4":"data/super4.json"}
 def load_json(p, d):
     if os.path.exists(p):
         try:
@@ -575,10 +575,42 @@ elif page.startswith("Reports"):
             if r.get('file_path',''):
                 show_any_file(r['file_path'], r.get('file_name','')); download_and_keep(r['file_path'], r.get('file_name',''), key=f"dl_rep_{r['id']}_{idx}")
 elif page.startswith("Super"):
-    st.subheader("Private Super 4")
-    for r in reversed(load_json(FILES["reports"], st.session_state.reports)):
-        with st.expander(f"{r['title']} - {r['from_name']}"):
-            st.info(r['content'])
+    st.subheader("Super 4 - Private Room - Only President, Patron, Speaker, Principal")
+    if not is_bigfour:
+        st.error("Only Big Four can see this room. President, Patron, Speaker, Principal only.")
+        st.write("You are not Big Four. You cannot see Super Four messages.")
+    else:
+        st.success("Only the 4 of you can see this. Write here, share here, only you 4 will see it.")
+        st.write("President, Patron, Speaker, Principal. Talk here alone.")
+        msgs = load_json(FILES["super4"], [])
+        if not isinstance(msgs, list):
+            msgs = []
+        s4_msg = st.text_area("Write your message to the other 3 here *", key="s4_msg")
+        s4_file = st.file_uploader("Attach file - Photo, PDF, Word, Excel, Any File", key="s4_file")
+        if st.button("SEND TO SUPER 4", type="primary", use_container_width=True, key="s4_send"):
+            if not s4_msg.strip() and not s4_file:
+                st.error("Write a message or attach a file first!")
+            else:
+                fpath = ""; fname = ""
+                if s4_file:
+                    fname = s4_file.name.replace(" ","_"); fpath = f"data/documents/super4_{int(time.time())}_{fname}"; write_encrypted_file(fpath, s4_file.getvalue())
+                msgs.append({"id":int(time.time()),"from":user,"from_name":user_full,"content":s4_msg.strip(),"file_name":fname,"file_path":fpath,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
+                save_json(FILES["super4"], msgs); st.success("Sent! Only Big Four will see it."); st.balloons(); st.rerun()
+        if st.button("REFRESH - SEE NEW MESSAGES", use_container_width=True, key="s4_refresh"):
+            st.rerun()
+        st.divider()
+        if not msgs:
+            st.info("No message yet. Speaker, write the first message here to Principal, Patron and President.")
+        for idx, m in enumerate(reversed(msgs)):
+            with st.container(border=True):
+                st.markdown(f"{m.get('from_name','')} | {m.get('date','')}")
+                if m.get('content'):
+                    st.info(m.get('content'))
+                if m.get('file_path','') and os.path.exists(m.get('file_path','')):
+                    show_any_file(m['file_path'], m.get('file_name',''))
+                    download_and_keep(m['file_path'], m.get('file_name',''), key=f"dl_s4_{m['id']}_{idx}")
+                if st.button(f"Delete this message", key=f"del_s4_{m['id']}_{idx}"):
+                    msgs = [x for x in msgs if x['id'] != m['id']]; save_json(FILES["super4"], msgs); st.rerun()
 elif page.startswith("Electoral"):
     st.subheader("Electoral")
     st.write(f"Total Votes: {len(votes)} | Public: {PORTAL_LINK}?public=vote")
