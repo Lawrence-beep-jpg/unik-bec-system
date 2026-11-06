@@ -1,5 +1,4 @@
-"C:\Users\SSANGO LAWRENCE\Desktop\unik bag.docx"
-"C:\Users\SSANGO Limport streamlit as st, os, json, pandas as pd, time, re, hashlib, base64, secrets
+import streamlit as st, os, json, pandas as pd, time, re, hashlib, base64, secrets
 from datetime import datetime as dt, timedelta
 import streamlit.components.v1 as components
 try:
@@ -10,6 +9,7 @@ st.set_page_config(page_title="UNIK BEC UNASNM Portal", page_icon="🏛️", lay
 os.makedirs("data/media_files", exist_ok=True)
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
+os.makedirs("data/badges", exist_ok=True)
 DEFAULT_PHRASE = "CHANGE-THIS-PHRASE-AT-ONCE-UNIK-2026"
 PHRASE_FILE = "data/phrase.txt"
 def load_phrase():
@@ -69,7 +69,7 @@ def migrate_phrase(old_phrase, new_phrase):
     paths = []
     for _v in FILES.values():
         paths.append(_v)
-    for _root in ["data/media_files", "data/documents", "data/personal"]:
+    for _root in ["data/media_files", "data/documents", "data/personal", "data/badges"]:
         if os.path.exists(_root):
             for _fn in os.listdir(_root):
                 paths.append(os.path.join(_root, _fn))
@@ -101,6 +101,7 @@ BIG_FOUR = ["president","patron","speaker","principal"]
 NEVER_BLOCK = ["patron","principal"]
 PORTAL_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/"
 FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json","blocked":"data/blocked.json","super4":"data/super4.json"}
+BADGE_FILES = {"university":"data/badges/university_badge","unasnm":"data/badges/unasnm_badge"}
 def load_json(p, d):
     if os.path.exists(p):
         try:
@@ -199,15 +200,28 @@ def days_left(item):
         return max(0, (exp - dt.now()).days)
     except:
         return 9999
+def badge_html(kind):
+    if kind == "university":
+        return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#0B3D1E;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>✚</div><div style='color:#FFD700;font-weight:900;font-size:22px;line-height:1.1;'>UNIVERSITY<br>OF KISUBI</div><div style='color:#FFFFFF;font-weight:900;font-size:18px;'>UniK</div><div style='color:#FFFFFF;font-size:15px;font-weight:700;'>📖 In Virtue We Educate</div><div style='color:#FFD700;font-size:14px;font-weight:700;'>EST. 2004</div></div>"""
+    return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#075E54;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>🩺</div><div style='color:#FFD700;font-weight:900;font-size:24px;line-height:1.1;'>UNASNM</div><div style='color:#FFFFFF;font-weight:900;font-size:16px;line-height:1.2;'>UGANDA NATIONAL<br>ASSOCIATION OF<br>STUDENT NURSES<br>AND MIDWIVES</div><div style='color:#FFD700;font-size:15px;font-weight:700;'>✚ Nursing Cap • Care • Unity</div></div>"""
 def find_badge(name):
     for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
         if os.path.exists(f):
             return f
     return ""
 def show_space(name):
+    saved = BADGE_FILES.get(name, "")
+    if saved and os.path.exists(saved):
+        try:
+            st.image(read_decrypted_file(saved), use_container_width=True)
+            return
+        except:
+            pass
     f = find_badge(name)
     if f:
         st.image(f, use_container_width=True)
+    else:
+        st.markdown(badge_html(name), unsafe_allow_html=True)
 def show_header(subtitle="Tap green, join Meet."):
     c_left, c_mid, c_right = st.columns([2,3,2])
     with c_left:
@@ -455,6 +469,22 @@ st.markdown(f"### {page}")
 st.divider()
 if page.startswith("Big Four"):
     st.subheader("Big Four Control - Only You 4 See This")
+    if user == "speaker" and not is_bigfour_viewer:
+        st.markdown("### Change Badges")
+        st.write("Pick a photo from your phone, tap SET. It will stay forever. Only you see this.")
+        uni_file = st.file_uploader("University badge photo", type=["jpg","png","jpeg"], key="badge_uni")
+        if st.button("SET UNIVERSITY BADGE", type="primary", use_container_width=True, key="set_badge_uni"):
+            if not uni_file:
+                st.error("Pick the University photo first.")
+            else:
+                write_encrypted_file(BADGE_FILES["university"], uni_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
+        unas_file = st.file_uploader("UNASNM badge photo", type=["jpg","png","jpeg"], key="badge_unas")
+        if st.button("SET UNASNM BADGE", type="primary", use_container_width=True, key="set_badge_unas"):
+            if not unas_file:
+                st.error("Pick the UNASNM photo first.")
+            else:
+                write_encrypted_file(BADGE_FILES["unasnm"], unas_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
+        st.divider()
     st.markdown("### OPEN ANOTHER OFFICE - ONLY BIG FOUR, ONLY HERE")
     st.write("Choose an office, tap OPEN. You will see everything in that office. Other people never see this.")
     other = st.selectbox("Office To Open", LOGIN_USERS, format_func=lambda x: USERS[x], key="open_other")
@@ -802,4 +832,4 @@ elif page.startswith("Audit"):
         st.dataframe(pd.DataFrame(list(reversed(audit))), use_container_width=True)
 st.markdown("---")
 st.markdown("<details><summary style='font-size:10px;color:#888888;'>•</summary><div style='font-size:11px;color:#555555;text-align:center;'>Speaker, Maker, 2025-2026</div></details>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | {dt.now().year}</p>", unsafe_allow_html=True)AWRENCE\Desktop\UNASNM_Official_Badge.docx"
+st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | {dt.now().year}</p>", unsafe_allow_html=True)
