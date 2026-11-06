@@ -1,4 +1,5 @@
-import streamlit as st, os, json, pandas as pd, time, re, hashlib, base64, secrets
+"C:\Users\SSANGO LAWRENCE\Desktop\unik bag.docx"
+"C:\Users\SSANGO Limport streamlit as st, os, json, pandas as pd, time, re, hashlib, base64, secrets
 from datetime import datetime as dt, timedelta
 import streamlit.components.v1 as components
 try:
@@ -801,4 +802,4 @@ elif page.startswith("Audit"):
         st.dataframe(pd.DataFrame(list(reversed(audit))), use_container_width=True)
 st.markdown("---")
 st.markdown("<details><summary style='font-size:10px;color:#888888;'>•</summary><div style='font-size:11px;color:#555555;text-align:center;'>Speaker, Maker, 2025-2026</div></details>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | {dt.now().year}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | {dt.now().year}</p>", unsafe_allow_html=True)AWRENCE\Desktop\UNASNM_Official_Badge.docx"
