@@ -97,6 +97,7 @@ WORD_LINK = "https://word.cloud.microsoft"
 EXCEL_LINK = "https://excel.cloud.microsoft"
 PPT_LINK = "https://powerpoint.cloud.microsoft"
 BIG_FOUR = ["president","patron","speaker","principal"]
+NEVER_BLOCK = ["patron","principal"]
 PORTAL_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/"
 FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json","blocked":"data/blocked.json","super4":"data/super4.json"}
 def load_json(p, d):
@@ -119,11 +120,65 @@ def get_meet_link():
     d = load_json(FILES["meetlink"], {})
     link = d.get("link", "") if isinstance(d, dict) else ""
     return link.strip() if link else DEFAULT_MEET_LINK
+def get_meet_info():
+    d = load_json(FILES["meetlink"], {})
+    return d if isinstance(d, dict) else {}
+def is_meeting_live():
+    d = get_meet_info()
+    try:
+        t = dt.strptime(d.get("date",""), "%Y-%m-%d %H:%M:%S.%f")
+        return (dt.now() - t).total_seconds() < 3600
+    except:
+        try:
+            t = dt.strptime(d.get("date",""), "%Y-%m-%d %H:%M")
+            return (dt.now() - t).total_seconds() < 3600
+        except:
+            return False
 def get_blocked():
     d = load_json(FILES["blocked"], {})
     return d if isinstance(d, dict) else {}
 def is_blocked(u):
+    if u in NEVER_BLOCK:
+        return False
     return bool(get_blocked().get(u, False))
+def add_notification(title, body):
+    try:
+        notes = load_json(FILES["notif"], [])
+        if not isinstance(notes, list):
+            notes = []
+        notes.append({"id":int(time.time()*1000),"title":title,"body":body,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
+        save_json(FILES["notif"], notes[-60:])
+    except:
+        pass
+def phone_notify_js(title, body):
+    safe_t = str(title).replace("'","").replace('"',"")
+    safe_b = str(body).replace("'","").replace('"',"")[:120]
+    components.html(f"""
+    <script>
+    if ("Notification" in window) {{
+      if (Notification.permission === "granted") {{
+        new Notification("{safe_t}", {{body: "{safe_b}"}});
+      }}
+    }}
+    </script>
+    """, height=0)
+def enable_notify_button():
+    components.html("""
+    <div style="text-align:center;">
+      <button onclick="askNotify()" style="background:#B71C1C;color:white;padding:14px 18px;border-radius:20px;font-size:17px;font-weight:900;border:none;width:100%;">ENABLE PHONE NOTIFICATIONS - TAP HERE, TAP ALLOW</button>
+      <p style="font-size:15px;font-weight:700;">Tap Allow once. Keep portal open in Chrome. New message and new meeting will show on your phone.</p>
+    </div>
+    <script>
+    function askNotify() {
+      if ("Notification" in window) {
+        Notification.requestPermission().then(function(p) {
+          if (p === "granted") { new Notification("UNIK Portal", {body: "Notifications ON."}); }
+          else { alert("Tap Allow. Go to Chrome, Site settings, Notifications, Allow."); }
+        });
+      } else { alert("Use Chrome."); }
+    }
+    </script>
+    """, height=110)
 KEEP_OPTIONS = {"7 Days":7, "30 Days":30, "90 Days":90, "1 Year":365, "Forever":36500}
 def keep_days(label):
     return KEEP_OPTIONS.get(label, 30)
@@ -223,6 +278,8 @@ if 'user' not in st.session_state:
     st.session_state.user = ""
 if 'acting_as' not in st.session_state:
     st.session_state.acting_as = ""
+if 'seen_notif' not in st.session_state:
+    st.session_state.seen_notif = 0
 st.markdown("""
 <style>
 .stApp{background: linear-gradient(180deg, #0B3D1E 0%, #075E54 260px, #FFF8E1 261px, #E8F5E9 100%) !important; color:#000000 !important;}
@@ -284,6 +341,19 @@ def do_change_password(target_user, old_pw, new_pw, new_pw2):
     st.success("Saved! Login with your new password.")
     st.balloons()
     return True
+def show_notifications_bar():
+    notes = load_json(FILES["notif"], [])
+    if not isinstance(notes, list):
+        notes = []
+    new_count = max(0, len(notes) - st.session_state.seen_notif)
+    if is_meeting_live():
+        st.error("MEETING IS GOING ON NOW. TAP JOIN MEET NOW.")
+        st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#B71C1C;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN MEETING NOW - LIVE</a>", unsafe_allow_html=True)
+    if new_count > 0 and notes:
+        st.warning(f"YOU HAVE {new_count} NEW NOTIFICATIONS. Latest: {notes[-1].get('title','')}")
+        phone_notify_js(notes[-1].get('title','UNIK Portal'), notes[-1].get('body','New message'))
+    if st.button("I HAVE SEEN NOTIFICATIONS", use_container_width=True, key="seen_notif_btn"):
+        st.session_state.seen_notif = len(notes); st.rerun()
 if is_public:
     show_header("One Email = One Vote")
     st.markdown("<h3 style='text-align:center;color:#FFFFFF;font-size:32px;'>PUBLIC ELECTION</h3>", unsafe_allow_html=True)
@@ -300,14 +370,16 @@ if is_public:
             else:
                 nid = int(time.time()); fpath = f"data/media_files/cand_{nid}.jpg"; write_encrypted_file(fpath, rphoto.getvalue())
                 st.session_state.pending.append({"id":nid,"position":rp,"name":rn,"class":rclass,"email":remail,"reason":rreason,"photo_path":fpath,"date":str(dt.now())[:16]})
-                save_json(FILES["pending"], st.session_state.pending); st.success("Sent! Wait for Speaker approval."); st.balloons()
+                save_json(FILES["pending"], st.session_state.pending)
+                add_notification("New candidate waiting", f"{rn} wants {USERS[rp]}. Speaker approve.")
+                st.success("Sent! Wait for Speaker approval."); st.balloons()
     with t2:
         voter_email = st.text_input("University Email *", key="pub_voter_email")
         if voter_email and "@" in voter_email:
             vp = st.selectbox("Position", ELECTION_POS, format_func=lambda x: USERS[x], key="pub_vote_pos")
             approved = [x for x in st.session_state.candidates if x['position'] == vp]
             if not approved:
-                st.warning("No approved candidate yet for this post. Speaker must approve first.")
+                st.warning("No approved candidate yet. Speaker must approve first.")
             else:
                 already = [v for v in st.session_state.votes if v.get('voter_email','').lower() == voter_email.lower() and v['position'] == vp]
                 if already:
@@ -334,26 +406,22 @@ if is_public:
     st.stop()
 if not st.session_state.logged_in:
     show_header("Welcome, Family!")
+    show_notifications_bar()
+    enable_notify_button()
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN MEET NOW</a>", unsafe_allow_html=True)
     javascript_copy_button()
-    office_buttons()
     PUBLIC_VOTE_LINK = PORTAL_LINK + "?public=vote"
     st.markdown(f"### PUBLIC VOTE\nLink: {PUBLIC_VOTE_LINK}")
     st.markdown("## LOGIN")
     u = st.selectbox("Your Office", LOGIN_USERS, format_func=lambda x: USERS[x], key="login")
-    target = st.selectbox("Office To Open", LOGIN_USERS, format_func=lambda x: USERS[x], key="login_target")
     p = st.text_input("Password", type="password", key="pass")
     st.write("First password: unik2025 for all. Change it below.")
     if st.button("LOGIN", type="primary", use_container_width=True):
         pw_dict = load_json(FILES["passwords"], st.session_state.passwords)
-        if u == target and is_blocked(u):
+        if is_blocked(u):
             st.error("You are BLOCKED. Talk to Big Four.")
-        elif u == target and check_password(p, pw_dict.get(u, "")):
-            st.session_state.logged_in = True; st.session_state.user = target; st.session_state.acting_as = ""; st.rerun()
-        elif u != target and u in BIG_FOUR and check_password(p, pw_dict.get(u, "")):
-            st.session_state.logged_in = True; st.session_state.user = target; st.session_state.acting_as = u; st.rerun()
-        elif u != target and u not in BIG_FOUR:
-            st.error("Only Big Four can open another office.")
+        elif check_password(p, pw_dict.get(u, "")):
+            st.session_state.logged_in = True; st.session_state.user = u; st.session_state.acting_as = ""; st.rerun()
         else:
             st.error("Wrong password! Default unik2025 if never changed.")
     st.divider()
@@ -369,24 +437,37 @@ user = st.session_state.user; user_full = USERS[user]
 is_bigfour_viewer = st.session_state.acting_as in BIG_FOUR
 is_bigfour = user in BIG_FOUR or is_bigfour_viewer
 is_speaker = user == "speaker" or st.session_state.acting_as == "speaker"
+real_bigfour = st.session_state.acting_as if is_bigfour_viewer else (user if user in BIG_FOUR else "")
 reports = load_json(FILES["reports"], st.session_state.reports); media = load_json(FILES["media"], st.session_state.media); docs_uploaded = load_json(FILES["uploaded"], st.session_state.uploaded); votes = load_json(FILES["votes"], st.session_state.votes)
 show_header("Everything on one screen.")
+show_notifications_bar()
+enable_notify_button()
 st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN MEET NOW</a>", unsafe_allow_html=True)
 if is_bigfour_viewer:
-    st.warning(f"Big Four: {USERS[st.session_state.acting_as]} opened {user_full}.")
+    st.warning(f"You are {USERS[real_bigfour]}. You opened {user_full}.")
 else:
     st.markdown(f"Hello, {user_full} | Encrypted ON")
 office_buttons()
-PAGES = ["Dashboard","Personal","Public","Meeting","Reports","Super 4","Electoral","Disciplinary","GP","Finance","Secret Docs","Documents","Media","YouTube","Cabinet","Audit"]
+PAGES = ["Notifications","Dashboard","Personal","Public","Meeting","Reports","Electoral","Disciplinary","GP","Finance","Documents","Media","YouTube","Cabinet","Audit"]
 if is_bigfour:
-    PAGES = ["Big Four"] + PAGES
+    PAGES = ["Big Four Control", "Secret Office"] + PAGES
 page = st.selectbox("CHOOSE DEPARTMENT", PAGES, key="top_page")
 if st.button("Logout", use_container_width=True):
     st.session_state.logged_in = False; st.session_state.user = ""; st.session_state.acting_as = ""; st.rerun()
+if st.button("REFRESH", use_container_width=True, key="refresh_top"):
+    st.rerun()
 st.markdown(f"### {page}")
 st.divider()
 if page.startswith("Big Four"):
-    st.subheader("Big Four Control")
+    st.subheader("Big Four Control - Only You 4 See This")
+    st.markdown("### OPEN ANOTHER OFFICE - ONLY BIG FOUR, ONLY HERE")
+    st.write("Choose an office, tap OPEN. You will see everything in that office. Other people never see this.")
+    other = st.selectbox("Office To Open", LOGIN_USERS, format_func=lambda x: USERS[x], key="open_other")
+    if st.button("OPEN THIS OFFICE", type="primary", use_container_width=True, key="open_other_btn"):
+        st.session_state.user = other; st.session_state.acting_as = real_bigfour if real_bigfour else user; st.rerun()
+    if is_bigfour_viewer:
+        if st.button("BACK TO MY OWN OFFICE", use_container_width=True, key="back_own"):
+            st.session_state.user = real_bigfour; st.session_state.acting_as = ""; st.rerun()
     st.divider()
     st.markdown("### CHANGE SECRET PHRASE - BIG FOUR ONLY")
     st.success("Old phrase is filled by itself. Only type new phrase twice.")
@@ -406,8 +487,12 @@ if page.startswith("Big Four"):
             st.success("Saved! All files re-locked. Write it down.")
             st.balloons(); st.rerun()
     st.divider()
+    st.markdown("### BLOCK / ALLOW - ONLY BIG FOUR")
+    st.write("Patron and Principal are never on this list. They can never be blocked.")
     blocked = get_blocked()
     for off in LOGIN_USERS:
+        if off in NEVER_BLOCK:
+            continue
         status = "BLOCKED" if blocked.get(off, False) else "ALLOWED"
         with st.container(border=True):
             st.markdown(f"{USERS[off]} - {status}")
@@ -418,6 +503,80 @@ if page.startswith("Big Four"):
                 blocked[off] = False; save_json(FILES["blocked"], blocked); st.session_state.blocked = blocked; st.rerun()
             if c3.button(f"RESET {USERS[off]}", key=f"reset_{off}"):
                 pw_dict = load_json(FILES["passwords"], st.session_state.passwords); pw_dict[off] = hash_password("unik2025"); save_json(FILES["passwords"], pw_dict); st.session_state.passwords = pw_dict; st.success(f"{USERS[off]} back to unik2025."); st.rerun()
+elif page.startswith("Secret"):
+    st.subheader("Secret Office - Only President, Patron, Speaker, Principal")
+    if not is_bigfour:
+        st.error("You cannot see this.")
+    else:
+        st.success("Only the 4 of you know this exists. Talk here. Keep secret documents here.")
+        msgs = load_json(FILES["super4"], [])
+        if not isinstance(msgs, list):
+            msgs = []
+        s4_msg = st.text_area("Write to the other 3 here *", key="s4_msg")
+        s4_file = st.file_uploader("Attach file", key="s4_file")
+        if st.button("SEND TO THE 4", type="primary", use_container_width=True, key="s4_send"):
+            if not s4_msg.strip() and not s4_file:
+                st.error("Write a message or attach a file first!")
+            else:
+                fpath = ""; fname = ""
+                if s4_file:
+                    fname = s4_file.name.replace(" ","_"); fpath = f"data/documents/super4_{int(time.time())}_{fname}"; write_encrypted_file(fpath, s4_file.getvalue())
+                msgs.append({"id":int(time.time()),"from":user,"from_name":user_full,"content":s4_msg.strip(),"file_name":fname,"file_path":fpath,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
+                save_json(FILES["super4"], msgs); add_notification("New Secret Office message", f"From {user_full}. Open Secret Office."); st.success("Sent! Only the 4 will see it."); st.balloons(); st.rerun()
+        st.divider()
+        if not msgs:
+            st.info("No message yet. Speaker, write the first message here.")
+        for idx, m in enumerate(reversed(msgs)):
+            with st.container(border=True):
+                st.markdown(f"{m.get('from_name','')} | {m.get('date','')}")
+                if m.get('content'):
+                    st.info(m.get('content'))
+                if m.get('file_path','') and os.path.exists(m.get('file_path','')):
+                    show_any_file(m['file_path'], m.get('file_name',''))
+                    download_and_keep(m['file_path'], m.get('file_name',''), key=f"dl_s4_{m['id']}_{idx}")
+                if st.button(f"Delete this message", key=f"del_s4_{m['id']}_{idx}"):
+                    msgs = [x for x in msgs if x['id'] != m['id']]; save_json(FILES["super4"], msgs); st.rerun()
+        st.divider()
+        st.markdown("### SECRET DOCUMENTS - ONLY THE 4")
+        sec = load_json(FILES["docs"], st.session_state.docs)
+        if not isinstance(sec, list):
+            sec = []
+        dt_ = st.text_input("Title *", key="sec_t"); dd = st.text_area("Note", key="sec_d")
+        keep_sec = st.selectbox("Keep for:", list(KEEP_OPTIONS.keys()), key="sec_keep")
+        sf = st.file_uploader("Document * - PDF, Word, Excel, PowerPoint, Text", type=["pdf","doc","docx","xls","xlsx","ppt","pptx","txt","csv"], key="sec_f")
+        if st.button("Save Secret Doc", type="primary", use_container_width=True, key="sec_s"):
+            if not dt_.strip() or not sf:
+                st.error("Title + Document required")
+            else:
+                fname = sf.name.replace(" ","_"); fpath = f"data/documents/secret_{int(time.time())}_{fname}"; write_encrypted_file(fpath, sf.getvalue())
+                sec.append({"id":int(time.time()),"title":dt_.strip(),"description":dd.strip(),"file_name":sf.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d"),"keep":keep_sec,"expires":expiry_str(keep_days(keep_sec))}); save_json(FILES["docs"], sec); add_notification("New secret document", dt_.strip()); st.success("Saved!"); st.rerun()
+        for idx, d in enumerate(reversed(sec)):
+            with st.container(border=True):
+                st.markdown(f"{d.get('title','')} | {d.get('by','')} | {retention_badge(d)}")
+                if d.get('description'):
+                    st.write(d.get('description',''))
+                if d.get('file_path','') and os.path.exists(d.get('file_path','')):
+                    show_any_file(d['file_path'], d.get('file_name',''))
+                    download_and_keep(d['file_path'], d.get('file_name',''), key=f"dl_sec_{d['id']}_{idx}")
+                c1,c2 = st.columns(2)
+                if c1.button("Keep Forever", key=f"sec_forever_{d['id']}_{idx}"):
+                    for x in sec:
+                        if x['id'] == d['id']:
+                            x['expires'] = expiry_str(36500); x['keep'] = "Forever"
+                    save_json(FILES["docs"], sec); st.rerun()
+                if c2.button("Remove", key=f"sec_del_{d['id']}_{idx}"):
+                    sec = [x for x in sec if x['id'] != d['id']]; save_json(FILES["docs"], sec); st.rerun()
+elif page.startswith("Notifications"):
+    st.subheader("Notifications")
+    notes = load_json(FILES["notif"], [])
+    if not isinstance(notes, list) or not notes:
+        st.info("No notification yet.")
+    for n in reversed(notes):
+        with st.container(border=True):
+            st.markdown(f"{n.get('title','')} | {n.get('date','')}")
+            st.write(n.get('body',''))
+    if st.button("MARK ALL AS SEEN", type="primary", use_container_width=True, key="mark_seen"):
+        st.session_state.seen_notif = len(notes); st.rerun()
 elif page.startswith("Dashboard"):
     st.subheader("Dashboard"); c1,c2,c3,c4 = st.columns(4)
     c1.metric("Reports", len(reports)); c2.metric("Media", len(media)); c3.metric("Docs", len(docs_uploaded)); c4.metric("Votes", len(votes))
@@ -437,7 +596,7 @@ elif page.startswith("YouTube"):
         if not yt_u:
             st.error("Paste link first")
         else:
-            yt.append({"id":int(time.time()),"title":yt_t.strip(),"url":yt_u.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["youtube"], yt); st.success("Saved!"); st.balloons(); st.rerun()
+            yt.append({"id":int(time.time()),"title":yt_t.strip(),"url":yt_u.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["youtube"], yt); add_notification("New YouTube video", yt_t.strip()); st.success("Saved!"); st.balloons(); st.rerun()
     for idx, y in enumerate(reversed(yt)):
         with st.container(border=True):
             st.markdown(f"{y.get('title','Video')} | {y.get('by','')} | {y.get('date','')}")
@@ -456,7 +615,7 @@ elif page.startswith("Media"):
             st.error("Title + File required")
         else:
             nid = int(time.time()); fpath = f"data/media_files/media_{nid}_{mf.name.replace(' ','_')}"; write_encrypted_file(fpath, mf.getvalue())
-            med.append({"id":nid,"title":mt.strip(),"file_name":mf.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep_label,"expires":expiry_str(keep_days(keep_label))}); save_json(FILES["media"], med); st.success("Saved! Download to phone to keep forever."); st.balloons(); st.rerun()
+            med.append({"id":nid,"title":mt.strip(),"file_name":mf.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep_label,"expires":expiry_str(keep_days(keep_label))}); save_json(FILES["media"], med); add_notification("New media", f"{mt.strip()} by {user_full}"); st.success("Saved!"); st.balloons(); st.rerun()
     q = st.text_input("Search", key="media_q")
     cols = st.columns(3)
     shown = [m for m in reversed(med) if (not q or q.lower() in m['title'].lower() + m.get('file_name','').lower())]
@@ -495,7 +654,7 @@ elif page.startswith("Documents"):
             st.error("Title + File required")
         else:
             safe = df.name.replace(" ","_"); fpath = f"data/documents/doc_{int(time.time())}_{safe}"; write_encrypted_file(fpath, df.getvalue())
-            docs.append({"id":int(time.time()),"category":dcat,"title":dtit.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep2,"expires":expiry_str(keep_days(keep2))}); save_json(FILES["uploaded"], docs); st.success("Uploaded!"); st.balloons(); st.rerun()
+            docs.append({"id":int(time.time()),"category":dcat,"title":dtit.strip(),"description":dd.strip(),"file_name":df.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M"),"keep":keep2,"expires":expiry_str(keep_days(keep2))}); save_json(FILES["uploaded"], docs); add_notification("New document", f"{dtit.strip()} by {user_full}"); st.success("Uploaded!"); st.balloons(); st.rerun()
     for idx, doc in enumerate(reversed(docs)):
         with st.container(border=True):
             st.markdown(f"{doc['title']} | {doc['category']} | {doc['by']}"); st.write(retention_badge(doc))
@@ -518,7 +677,7 @@ elif page.startswith("Public"):
         if af:
             fname = af.name.replace(" ","_"); fpath = f"data/documents/ann_{int(time.time())}_{fname}"; write_encrypted_file(fpath, af.getvalue())
         anns.append({"id":int(time.time()),"title":at.strip(),"content":acont.strip(),"file_name":fname,"file_path":fpath,"from":user,"from_name":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
-        save_json(FILES["ann"], anns); st.success("Broadcasted!"); st.balloons(); st.rerun()
+        save_json(FILES["ann"], anns); add_notification("New message for all 13", f"{at.strip()} from {user_full}"); st.success("Broadcasted!"); st.balloons(); st.rerun()
     for idx, ann in enumerate(reversed(anns)):
         with st.container(border=True):
             st.markdown(f"{ann['title']} | {ann['from_name']} | {ann['date']}"); st.info(ann['content'])
@@ -527,15 +686,19 @@ elif page.startswith("Public"):
                 download_and_keep(ann['file_path'], ann.get('file_name',''), key=f"dl_ann_{ann['id']}_{idx}")
 elif page.startswith("Meeting"):
     st.subheader("Meeting")
+    if is_meeting_live():
+        st.error("MEETING IS GOING ON NOW. JOIN NOW.")
     st.success(f"Meet: {MEET_LINK}")
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#075E54;color:#FFFFFF;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:20px;display:block;text-align:center;'>JOIN MEET NOW</a>", unsafe_allow_html=True)
     st.link_button("JOIN TEAMS", TEAMS_LINK, use_container_width=True)
     new_link = st.text_input("New Meet Link", value=MEET_LINK, key="new_meet_link")
-    if st.button("SAVE LINK", type="primary", use_container_width=True):
+    if st.button("SAVE LINK AND CALL ALL 13 TO MEETING", type="primary", use_container_width=True):
         if "meet.google.com" not in new_link:
             st.error("Not a Meet link!")
         else:
-            save_json(FILES["meetlink"], {"link":new_link.strip(),"by":user_full,"date":str(dt.now())}); st.success("Saved!"); st.rerun()
+            save_json(FILES["meetlink"], {"link":new_link.strip(),"by":user_full,"date":str(dt.now())})
+            add_notification("MEETING IS GOING ON NOW", f"Join Meet now. Started by {user_full}.")
+            st.success("Saved! All 13 will see MEETING IS GOING ON."); st.balloons(); st.rerun()
 elif page.startswith("Personal"):
     st.subheader("My Personal Portal - Only You")
     st.markdown("### CHANGE MY PASSWORD")
@@ -560,57 +723,20 @@ elif page.startswith("Personal"):
             if p.get('file_path',''):
                 show_any_file(p['file_path'], p.get('file_name','')); download_and_keep(p['file_path'], p.get('file_name',''), key=f"dl_pers_{p['id']}_{idx}")
 elif page.startswith("Reports"):
-    st.subheader("Submit Report")
-    rt = st.selectbox("Type", REPORT_TYPES, key="rt"); rtitle = st.text_input("Title *", key="rtitle"); rcontent = st.text_area("Details *", key="rcontent")
-    rf = st.file_uploader("File", key="rep_f")
+    st.subheader("Submit Report - Type Your Letter, Upload Your Report")
+    rt = st.selectbox("Type", REPORT_TYPES, key="rt"); rtitle = st.text_input("Title *", key="rtitle"); rcontent = st.text_area("Details * - Type your letter here", key="rcontent")
+    rf = st.file_uploader("File - Word, Excel, PDF, Photo, Any File", key="rep_f")
     if st.button("Submit", type="primary", use_container_width=True):
         fpath = ""; fname = ""
         if rf:
             fname = rf.name.replace(" ","_"); fpath = f"data/documents/report_{int(time.time())}_{fname}"; write_encrypted_file(fpath, rf.getvalue())
-        reports.append({"id":int(time.time()),"date":dt.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip(),"file_name":fname,"file_path":fpath}); save_json(FILES["reports"], reports); st.success("Submitted!"); st.balloons(); st.rerun()
+        reports.append({"id":int(time.time()),"date":dt.now().strftime("%Y-%m-%d %H:%M"),"from":user,"from_name":user_full,"type":rt,"title":rtitle.strip(),"content":rcontent.strip(),"file_name":fname,"file_path":fpath}); save_json(FILES["reports"], reports); add_notification("New report", f"{rtitle.strip()} from {user_full}"); st.success("Submitted!"); st.balloons(); st.rerun()
     for idx, r in enumerate(reversed(reports)):
         with st.container(border=True):
             st.markdown(f"{r['title']} | {r.get('type','')} | {r['from_name']}")
             st.info(r.get('content',''))
             if r.get('file_path',''):
                 show_any_file(r['file_path'], r.get('file_name','')); download_and_keep(r['file_path'], r.get('file_name',''), key=f"dl_rep_{r['id']}_{idx}")
-elif page.startswith("Super"):
-    st.subheader("Super 4 - Private Room - Only President, Patron, Speaker, Principal")
-    if not is_bigfour:
-        st.error("Only Big Four can see this room. President, Patron, Speaker, Principal only.")
-        st.write("You are not Big Four. You cannot see Super Four messages.")
-    else:
-        st.success("Only the 4 of you can see this. Write here, share here, only you 4 will see it.")
-        st.write("President, Patron, Speaker, Principal. Talk here alone.")
-        msgs = load_json(FILES["super4"], [])
-        if not isinstance(msgs, list):
-            msgs = []
-        s4_msg = st.text_area("Write your message to the other 3 here *", key="s4_msg")
-        s4_file = st.file_uploader("Attach file - Photo, PDF, Word, Excel, Any File", key="s4_file")
-        if st.button("SEND TO SUPER 4", type="primary", use_container_width=True, key="s4_send"):
-            if not s4_msg.strip() and not s4_file:
-                st.error("Write a message or attach a file first!")
-            else:
-                fpath = ""; fname = ""
-                if s4_file:
-                    fname = s4_file.name.replace(" ","_"); fpath = f"data/documents/super4_{int(time.time())}_{fname}"; write_encrypted_file(fpath, s4_file.getvalue())
-                msgs.append({"id":int(time.time()),"from":user,"from_name":user_full,"content":s4_msg.strip(),"file_name":fname,"file_path":fpath,"date":dt.now().strftime("%Y-%m-%d %H:%M")})
-                save_json(FILES["super4"], msgs); st.success("Sent! Only Big Four will see it."); st.balloons(); st.rerun()
-        if st.button("REFRESH - SEE NEW MESSAGES", use_container_width=True, key="s4_refresh"):
-            st.rerun()
-        st.divider()
-        if not msgs:
-            st.info("No message yet. Speaker, write the first message here to Principal, Patron and President.")
-        for idx, m in enumerate(reversed(msgs)):
-            with st.container(border=True):
-                st.markdown(f"{m.get('from_name','')} | {m.get('date','')}")
-                if m.get('content'):
-                    st.info(m.get('content'))
-                if m.get('file_path','') and os.path.exists(m.get('file_path','')):
-                    show_any_file(m['file_path'], m.get('file_name',''))
-                    download_and_keep(m['file_path'], m.get('file_name',''), key=f"dl_s4_{m['id']}_{idx}")
-                if st.button(f"Delete this message", key=f"del_s4_{m['id']}_{idx}"):
-                    msgs = [x for x in msgs if x['id'] != m['id']]; save_json(FILES["super4"], msgs); st.rerun()
 elif page.startswith("Electoral"):
     st.subheader("Electoral")
     st.write(f"Total Votes: {len(votes)} | Public: {PORTAL_LINK}?public=vote")
@@ -623,7 +749,7 @@ elif page.startswith("Electoral"):
             st.write(f"{pc['name']} - {USERS[pc['position']]} - {pc.get('class','')}"); st.info(pc.get('reason',''))
             if is_speaker:
                 if st.button(f"APPROVE {pc['name']}", key=f"ap_{pc['id']}", type="primary"):
-                    st.session_state.candidates.append(pc); st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["candidates"], st.session_state.candidates); save_json(FILES["pending"], st.session_state.pending); st.success("Approved! Now people can vote."); st.rerun()
+                    st.session_state.candidates.append(pc); st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["candidates"], st.session_state.candidates); save_json(FILES["pending"], st.session_state.pending); add_notification("Candidate approved", f"{pc['name']} can now be voted."); st.success("Approved!"); st.rerun()
                 if st.button(f"REJECT {pc['name']}", key=f"rj_{pc['id']}"):
                     st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["pending"], st.session_state.pending); st.rerun()
             else:
@@ -640,7 +766,7 @@ elif page.startswith("Disciplinary"):
     st.subheader("Disciplinary"); disc = load_json(FILES["disc"], st.session_state.disc)
     d_t = st.text_input("Title *", key="disc_t"); d_c = st.text_area("Details *", key="disc_c")
     if st.button("Save", type="primary", key="disc_s"):
-        disc.append({"id":int(time.time()),"title":d_t.strip(),"content":d_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["disc"], disc); st.success("Saved!"); st.rerun()
+        disc.append({"id":int(time.time()),"title":d_t.strip(),"content":d_c.strip(),"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["disc"], disc); add_notification("New disciplinary case", d_t.strip()); st.success("Saved!"); st.rerun()
     for dr in reversed(disc):
         st.info(f"{dr['title']} - {dr['by']} - {dr['content']}")
 elif page.startswith("GP"):
@@ -658,49 +784,12 @@ elif page.startswith("Finance"):
         fname = ""; fpath = ""
         if f_f:
             fname = f_f.name.replace(" ","_"); fpath = f"data/documents/finance_{int(time.time())}_{fname}"; write_encrypted_file(fpath, f_f.getvalue())
-        fin.append({"id":int(time.time()),"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"], fin); st.success("Saved!"); st.balloons(); st.rerun()
+        fin.append({"id":int(time.time()),"title":f_t.strip(),"description":f_d.strip(),"amount":f_amount,"file_name":fname,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d %H:%M")}); save_json(FILES["finance"], fin); add_notification("New finance report", f_t.strip()); st.success("Saved!"); st.balloons(); st.rerun()
     for idx, fd in enumerate(reversed(fin)):
         with st.container(border=True):
             st.markdown(f"{fd['title']} - UGX {fd.get('amount',0):,}")
             if fd.get('file_path',''):
                 show_any_file(fd['file_path'], fd.get('file_name','')); download_and_keep(fd['file_path'], fd.get('file_name',''), key=f"dl_fin_{fd['id']}_{idx}")
-elif page.startswith("Secret"):
-    st.subheader("Secret Docs - Documents Only")
-    sec = load_json(FILES["docs"], st.session_state.docs)
-    if not isinstance(sec, list):
-        sec = []
-    dt_ = st.text_input("Title *", key="sec_t"); dd = st.text_area("Note", key="sec_d")
-    if is_bigfour:
-        keep_sec = st.selectbox("Keep for:", list(KEEP_OPTIONS.keys()), key="sec_keep")
-    else:
-        keep_sec = "30 Days"
-        st.write("Stays 30 days. Big Four decide Forever or remove.")
-    sf = st.file_uploader("Document * - PDF, Word, Excel, PowerPoint, Text", type=["pdf","doc","docx","xls","xlsx","ppt","pptx","txt","csv"], key="sec_f")
-    if st.button("Save Secret Doc", type="primary", use_container_width=True, key="sec_s"):
-        if not dt_.strip() or not sf:
-            st.error("Title + Document required")
-        else:
-            fname = sf.name.replace(" ","_"); fpath = f"data/documents/secret_{int(time.time())}_{fname}"; write_encrypted_file(fpath, sf.getvalue())
-            sec.append({"id":int(time.time()),"title":dt_.strip(),"description":dd.strip(),"file_name":sf.name,"file_path":fpath,"by":user_full,"date":dt.now().strftime("%Y-%m-%d"),"keep":keep_sec,"expires":expiry_str(keep_days(keep_sec))}); save_json(FILES["docs"], sec); st.success("Saved!"); st.rerun()
-    for idx, d in enumerate(reversed(sec)):
-        if is_expired(d) and not is_bigfour:
-            continue
-        with st.container(border=True):
-            st.markdown(f"{d.get('title','')} | {d.get('by','')} | {retention_badge(d)}")
-            if d.get('description'):
-                st.write(d.get('description',''))
-            if d.get('file_path','') and os.path.exists(d.get('file_path','')):
-                show_any_file(d['file_path'], d.get('file_name',''))
-                download_and_keep(d['file_path'], d.get('file_name',''), key=f"dl_sec_{d['id']}_{idx}")
-            if is_bigfour:
-                c1,c2 = st.columns(2)
-                if c1.button("Keep Forever", key=f"sec_forever_{d['id']}_{idx}"):
-                    for x in sec:
-                        if x['id'] == d['id']:
-                            x['expires'] = expiry_str(36500); x['keep'] = "Forever"
-                    save_json(FILES["docs"], sec); st.rerun()
-                if c2.button("Remove", key=f"sec_del_{d['id']}_{idx}"):
-                    sec = [x for x in sec if x['id'] != d['id']]; save_json(FILES["docs"], sec); st.rerun()
 elif page.startswith("Cabinet"):
     st.subheader("Cabinet Archive"); cabs = load_json(FILES["cabinets"], st.session_state.cabinets)
     cy = st.text_input("Year *", key="cab_y"); cn = st.text_input("Name *", key="cab_n"); cm = st.text_area("Members *", key="cab_m"); cp = st.file_uploader("Photo", key="cab_p")
@@ -716,4 +805,6 @@ elif page.startswith("Audit"):
     st.subheader("Audit Log"); audit = load_json(FILES["audit"], st.session_state.audit)
     if audit:
         st.dataframe(pd.DataFrame(list(reversed(audit))), use_container_width=True)
-st.markdown("---"); st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | {dt.now().year}</p>", unsafe_allow_html=True)
+st.markdown("---")
+st.markdown("<details><summary style='font-size:10px;color:#888888;'>•</summary><div style='font-size:11px;color:#555555;text-align:center;'>Speaker, Maker, 2025-2026</div></details>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center;color:#000000;'>UNIK BEC UNASNM | {dt.now().year}</p>", unsafe_allow_html=True)
