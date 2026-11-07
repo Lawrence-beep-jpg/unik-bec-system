@@ -102,6 +102,7 @@ NEVER_BLOCK = ["patron","principal"]
 PORTAL_LINK = "https://unik-bec-system-edudyqeshonywrcnjthl8l.streamlit.app/"
 FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"data/candidates.json","pending":"data/pending.json","votes":"data/votes.json","cabinets":"data/cabinets.json","docs":"data/docs.json","finance":"data/finance.json","disc":"data/disc.json","gp":"data/gp.json","passwords":"data/passwords.json","uploaded":"data/uploaded_docs.json","ann":"data/announcements.json","meet":"data/meetings.json","personal":"data/personal.json","audit":"data/audit.json","notif":"data/notifications.json","meetlink":"data/meet_link.json","youtube":"data/youtube.json","blocked":"data/blocked.json","super4":"data/super4.json"}
 BADGE_FILES = {"university":"data/badges/university_badge","unasnm":"data/badges/unasnm_badge"}
+BADGE_STORE = "data/badge_store.json"
 def load_json(p, d):
     if os.path.exists(p):
         try:
@@ -118,6 +119,33 @@ def save_json(p, data):
     raw = json.dumps(data, default=str, indent=2).encode()
     with open(p, 'wb') as f:
         f.write(encrypt_bytes(raw))
+def save_badge(name, raw_bytes):
+    try:
+        write_encrypted_file(BADGE_FILES[name], raw_bytes)
+    except:
+        pass
+    try:
+        store = load_json(BADGE_STORE, {})
+        if not isinstance(store, dict):
+            store = {}
+        store[name] = base64.b64encode(raw_bytes).decode()
+        save_json(BADGE_STORE, store)
+    except:
+        pass
+def load_badge_b64(name):
+    try:
+        store = load_json(BADGE_STORE, {})
+        if isinstance(store, dict) and store.get(name):
+            return store[name]
+    except:
+        pass
+    try:
+        saved = BADGE_FILES.get(name, "")
+        if saved and os.path.exists(saved):
+            return base64.b64encode(read_decrypted_file(saved)).decode()
+    except:
+        pass
+    return ""
 def get_meet_link():
     d = load_json(FILES["meetlink"], {})
     link = d.get("link", "") if isinstance(d, dict) else ""
@@ -210,18 +238,20 @@ def find_badge(name):
             return f
     return ""
 def show_space(name):
-    saved = BADGE_FILES.get(name, "")
-    if saved and os.path.exists(saved):
+    b64 = load_badge_b64(name)
+    if b64:
+        st.markdown(f"<div style='pointer-events:none;user-select:none;'><img src='data:image/jpeg;base64,{b64}' style='width:100%;height:220px;object-fit:cover;border:4px solid #FFD700;border-radius:20px;display:block;pointer-events:none;'></div>", unsafe_allow_html=True)
+        return
+    f = find_badge(name)
+    if f:
         try:
-            st.image(read_decrypted_file(saved), use_container_width=True)
+            with open(f, 'rb') as _fh:
+                _b64 = base64.b64encode(_fh.read()).decode()
+            st.markdown(f"<div style='pointer-events:none;user-select:none;'><img src='data:image/jpeg;base64,{_b64}' style='width:100%;height:220px;object-fit:cover;border:4px solid #FFD700;border-radius:20px;display:block;pointer-events:none;'></div>", unsafe_allow_html=True)
             return
         except:
             pass
-    f = find_badge(name)
-    if f:
-        st.image(f, use_container_width=True)
-    else:
-        st.markdown(badge_html(name), unsafe_allow_html=True)
+    st.markdown(badge_html(name), unsafe_allow_html=True)
 def show_header(subtitle="Tap green, join Meet."):
     c_left, c_mid, c_right = st.columns([2,3,2])
     with c_left:
@@ -477,13 +507,13 @@ if page.startswith("Big Four"):
             if not uni_file:
                 st.error("Pick the University photo first.")
             else:
-                write_encrypted_file(BADGE_FILES["university"], uni_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
+                save_badge("university", uni_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
         unas_file = st.file_uploader("UNASNM badge photo", type=["jpg","png","jpeg"], key="badge_unas")
         if st.button("SET UNASNM BADGE", type="primary", use_container_width=True, key="set_badge_unas"):
             if not unas_file:
                 st.error("Pick the UNASNM photo first.")
             else:
-                write_encrypted_file(BADGE_FILES["unasnm"], unas_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
+                save_badge("unasnm", unas_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
         st.divider()
     st.markdown("### OPEN ANOTHER OFFICE - ONLY BIG FOUR, ONLY HERE")
     st.write("Choose an office, tap OPEN. You will see everything in that office. Other people never see this.")
