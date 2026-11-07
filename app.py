@@ -230,27 +230,34 @@ def days_left(item):
         return 9999
 def badge_html(kind):
     if kind == "university":
-        return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#0B3D1E;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>✚</div><div style='color:#FFD700;font-weight:900;font-size:22px;line-height:1.1;'>UNIVERSITY<br>OF KISUBI</div><div style='color:#FFFFFF;font-weight:900;font-size:18px;'>UniK</div><div style='color:#FFFFFF;font-size:15px;font-weight:700;'>📖 In Virtue We Educate</div><div style='color:#FFD700;font-size:14px;font-weight:700;'>EST. 2004</div></div>"""
-    return """<div style='height:220px;border:4px solid #FFD700;border-radius:20px;background:#075E54;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>🩺</div><div style='color:#FFD700;font-weight:900;font-size:24px;line-height:1.1;'>UNASNM</div><div style='color:#FFFFFF;font-weight:900;font-size:16px;line-height:1.2;'>UGANDA NATIONAL<br>ASSOCIATION OF<br>STUDENT NURSES<br>AND MIDWIVES</div><div style='color:#FFD700;font-size:15px;font-weight:700;'>✚ Nursing Cap • Care • Unity</div></div>"""
+        return """<div style='height:180px;border:4px solid #FFD700;border-radius:20px;background:#0B3D1E;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>✚</div><div style='color:#FFD700;font-weight:900;font-size:22px;line-height:1.1;'>UNIVERSITY<br>OF KISUBI</div><div style='color:#FFFFFF;font-weight:900;font-size:18px;'>UniK</div><div style='color:#FFFFFF;font-size:15px;font-weight:700;'>📖 In Virtue We Educate</div><div style='color:#FFD700;font-size:14px;font-weight:700;'>EST. 2004</div></div>"""
+    return """<div style='height:180px;border:4px solid #FFD700;border-radius:20px;background:#075E54;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;'><div style='font-size:52px;'>🩺</div><div style='color:#FFD700;font-weight:900;font-size:24px;line-height:1.1;'>UNASNM</div><div style='color:#FFFFFF;font-weight:900;font-size:16px;line-height:1.2;'>UGANDA NATIONAL<br>ASSOCIATION OF<br>STUDENT NURSES<br>AND MIDWIVES</div><div style='color:#FFD700;font-size:15px;font-weight:700;'>✚ Nursing Cap • Care • Unity</div></div>"""
 def find_badge(name):
-    for f in [name+".jpg", name+".png", name+".jpeg", name+".JPG", name+".PNG"]:
+    wanted = [name+".png", name+".jpg", name+".jpeg"]
+    for f in wanted + [x.upper() for x in wanted]:
         if os.path.exists(f):
             return f
+    for _root, _dirs, _files in os.walk("."):
+        if ".git" in _root:
+            continue
+        for _fn in _files:
+            if _fn.lower() in wanted:
+                return os.path.join(_root, _fn)
     return ""
 def show_space(name):
-    b64 = load_badge_b64(name)
-    if b64:
-        st.markdown(f"<div style='pointer-events:none;user-select:none;'><img src='data:image/jpeg;base64,{b64}' style='width:100%;height:220px;object-fit:cover;border:4px solid #FFD700;border-radius:20px;display:block;pointer-events:none;'></div>", unsafe_allow_html=True)
-        return
     f = find_badge(name)
     if f:
         try:
             with open(f, 'rb') as _fh:
                 _b64 = base64.b64encode(_fh.read()).decode()
-            st.markdown(f"<div style='pointer-events:none;user-select:none;'><img src='data:image/jpeg;base64,{_b64}' style='width:100%;height:220px;object-fit:cover;border:4px solid #FFD700;border-radius:20px;display:block;pointer-events:none;'></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background:#FFFFFF;border:4px solid #FFD700;border-radius:20px;padding:8px;pointer-events:none;user-select:none;'><img src='data:image/png;base64,{_b64}' style='width:100%;height:180px;object-fit:contain;display:block;pointer-events:none;'></div>", unsafe_allow_html=True)
             return
         except:
             pass
+    b64 = load_badge_b64(name)
+    if b64:
+        st.markdown(f"<div style='background:#FFFFFF;border:4px solid #FFD700;border-radius:20px;padding:8px;pointer-events:none;user-select:none;'><img src='data:image/png;base64,{b64}' style='width:100%;height:180px;object-fit:contain;display:block;pointer-events:none;'></div>", unsafe_allow_html=True)
+        return
     st.markdown(badge_html(name), unsafe_allow_html=True)
 def show_header(subtitle="Tap green, join Meet."):
     c_left, c_mid, c_right = st.columns([2,3,2])
@@ -499,22 +506,6 @@ st.markdown(f"### {page}")
 st.divider()
 if page.startswith("Big Four"):
     st.subheader("Big Four Control - Only You 4 See This")
-    if user == "speaker" and not is_bigfour_viewer:
-        st.markdown("### Change Badges")
-        st.write("Pick a photo from your phone, tap SET. It will stay forever. Only you see this.")
-        uni_file = st.file_uploader("University badge photo", type=["jpg","png","jpeg"], key="badge_uni")
-        if st.button("SET UNIVERSITY BADGE", type="primary", use_container_width=True, key="set_badge_uni"):
-            if not uni_file:
-                st.error("Pick the University photo first.")
-            else:
-                save_badge("university", uni_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
-        unas_file = st.file_uploader("UNASNM badge photo", type=["jpg","png","jpeg"], key="badge_unas")
-        if st.button("SET UNASNM BADGE", type="primary", use_container_width=True, key="set_badge_unas"):
-            if not unas_file:
-                st.error("Pick the UNASNM photo first.")
-            else:
-                save_badge("unasnm", unas_file.getvalue()); st.success("Set! It will stay forever."); st.balloons(); st.rerun()
-        st.divider()
     st.markdown("### OPEN ANOTHER OFFICE - ONLY BIG FOUR, ONLY HERE")
     st.write("Choose an office, tap OPEN. You will see everything in that office. Other people never see this.")
     other = st.selectbox("Office To Open", LOGIN_USERS, format_func=lambda x: USERS[x], key="open_other")
