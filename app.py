@@ -10,20 +10,21 @@ os.makedirs("data/media_files", exist_ok=True)
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
 os.makedirs("data/badges", exist_ok=True)
-GITHUB_TOKEN = ""
-GITHUB_REPO = ""
+# I CHANGED IT FOR YOU. NO LINES TO CHANGE HERE. NO TOKEN IN CODE. NO SECRETS.
 GITHUB_BRANCH = "main"
-try:
-    GITHUB_TOKEN = str(st.secrets.get("GITHUB_TOKEN", ""))
-    GITHUB_REPO = str(st.secrets.get("GITHUB_REPO", ""))
-    GITHUB_BRANCH = str(st.secrets.get("GITHUB_BRANCH", "main") or "main")
-except Exception:
-    pass
+if "gh_token" not in st.session_state:
+    st.session_state.gh_token = ""
+if "gh_repo" not in st.session_state:
+    st.session_state.gh_repo = ""
+def gh_token():
+    return st.session_state.get("gh_token", "")
+def gh_repo():
+    return st.session_state.get("gh_repo", "")
 _gh_cache = {}
 def _gh_req(url, method="GET", payload=None):
-    if not GITHUB_TOKEN or not GITHUB_REPO:
+    if not gh_token() or not gh_repo():
         return None
-    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json", "Content-Type": "application/json"}
+    headers = {"Authorization": f"token {gh_token()}", "Accept": "application/vnd.github+json", "Content-Type": "application/json"}
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
@@ -39,7 +40,7 @@ def _gh_req(url, method="GET", payload=None):
 def gh_get_bytes(path):
     if path in _gh_cache:
         return _gh_cache[path]
-    j = _gh_req(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_BRANCH}")
+    j = _gh_req(f"https://api.github.com/repos/{gh_repo()}/contents/{path}?ref={GITHUB_BRANCH}")
     if not j or not j.get("content"):
         return None
     try:
@@ -49,12 +50,12 @@ def gh_get_bytes(path):
     except Exception:
         return None
 def gh_put_bytes(path, data):
-    j = _gh_req(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_BRANCH}")
+    j = _gh_req(f"https://api.github.com/repos/{gh_repo()}/contents/{path}?ref={GITHUB_BRANCH}")
     sha = j.get("sha") if isinstance(j, dict) else None
     payload = {"message": f"Portal save {path} {dt.now().strftime('%Y-%m-%d %H:%M')}", "content": base64.b64encode(data).decode(), "branch": GITHUB_BRANCH}
     if sha:
         payload["sha"] = sha
-    r = _gh_req(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}", method="PUT", payload=payload)
+    r = _gh_req(f"https://api.github.com/repos/{gh_repo()}/contents/{path}", method="PUT", payload=payload)
     if isinstance(r, dict) and r.get("content"):
         _gh_cache[path] = data
         return True
@@ -538,6 +539,19 @@ if is_public:
     st.stop()
 if not st.session_state.logged_in:
     show_header("Welcome, Family!")
+    st.markdown("### GITHUB KEY - TYPE HERE ONE TIME, ONLY SPEAKER")
+    st.write("Type your repo name and your key here. Do not type them in the code. Do not send them in chat.")
+    in_repo = st.text_input("Repo name - like your-name/unik-bec-system", value=st.session_state.gh_repo, key="in_repo")
+    in_key = st.text_input("Key - starts with ghp_", type="password", value=st.session_state.gh_token, key="in_key")
+    if st.button("SAVE GITHUB KEY", type="primary", use_container_width=True, key="save_gh"):
+        st.session_state.gh_repo = in_repo.strip()
+        st.session_state.gh_token = in_key.strip()
+        st.success("Saved! Now files will go to GitHub and will stay.")
+        st.rerun()
+    if gh_repo() and gh_token():
+        st.success("GitHub key is saved. Files will stay.")
+    else:
+        st.warning("No GitHub key yet. Files will not stay after Reboot until you save the key above.")
     show_notifications_bar()
     enable_notify_button()
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN MEET NOW</a>", unsafe_allow_html=True)
