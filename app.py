@@ -1,4 +1,4 @@
-import streamlit as st, os, json, pandas as pd, time, re, hashlib, base64, secrets
+import streamlit as st, os, json, pandas as pd, time, re, hashlib, base64, secrets, urllib.request, urllib.error
 from datetime import datetime as dt, timedelta
 import streamlit.components.v1 as components
 try:
@@ -10,9 +10,66 @@ os.makedirs("data/media_files", exist_ok=True)
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
 os.makedirs("data/badges", exist_ok=True)
+GITHUB_TOKEN = ""
+GITHUB_REPO = ""
+GITHUB_BRANCH = "main"
+try:
+    GITHUB_TOKEN = str(st.secrets.get("GITHUB_TOKEN", ""))
+    GITHUB_REPO = str(st.secrets.get("GITHUB_REPO", ""))
+    GITHUB_BRANCH = str(st.secrets.get("GITHUB_BRANCH", "main") or "main")
+except Exception:
+    pass
+_gh_cache = {}
+def _gh_req(url, method="GET", payload=None):
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return None
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github+json", "Content-Type": "application/json"}
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read().decode())
+        except Exception:
+            return None
+    except Exception:
+        return None
+def gh_get_bytes(path):
+    if path in _gh_cache:
+        return _gh_cache[path]
+    j = _gh_req(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_BRANCH}")
+    if not j or not j.get("content"):
+        return None
+    try:
+        data = base64.b64decode(j["content"])
+        _gh_cache[path] = data
+        return data
+    except Exception:
+        return None
+def gh_put_bytes(path, data):
+    j = _gh_req(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}?ref={GITHUB_BRANCH}")
+    sha = j.get("sha") if isinstance(j, dict) else None
+    payload = {"message": f"Portal save {path} {dt.now().strftime('%Y-%m-%d %H:%M')}", "content": base64.b64encode(data).decode(), "branch": GITHUB_BRANCH}
+    if sha:
+        payload["sha"] = sha
+    r = _gh_req(f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}", method="PUT", payload=payload)
+    if isinstance(r, dict) and r.get("content"):
+        _gh_cache[path] = data
+        return True
+    return False
 DEFAULT_PHRASE = "CHANGE-THIS-PHRASE-AT-ONCE-UNIK-2026"
 PHRASE_FILE = "data/phrase.txt"
 def load_phrase():
+    try:
+        raw = gh_get_bytes(PHRASE_FILE)
+        if raw:
+            v = raw.decode().strip()
+            if v:
+                return v
+    except:
+        pass
     try:
         if os.path.exists(PHRASE_FILE):
             with open(PHRASE_FILE, 'r') as f:
@@ -46,9 +103,18 @@ def encrypt_bytes(data):
 def decrypt_bytes(data):
     return decrypt_with(CURRENT_PHRASE, data)
 def write_encrypted_file(path, data):
-    with open(path, 'wb') as f:
-        f.write(encrypt_bytes(data))
+    enc = encrypt_bytes(data)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'wb') as f:
+            f.write(enc)
+    except:
+        pass
+    gh_put_bytes(path, enc)
 def read_decrypted_file(path):
+    raw = gh_get_bytes(path)
+    if raw is not None:
+        return decrypt_bytes(raw)
     with open(path, 'rb') as f:
         return decrypt_bytes(f.read())
 def hash_password(password, salt=None):
@@ -86,11 +152,16 @@ def migrate_phrase(old_phrase, new_phrase):
                 continue
             with open(_p, 'wb') as f:
                 f.write(encrypt_with(new_phrase, dec))
+            gh_put_bytes(_p, encrypt_with(new_phrase, dec))
         except:
             pass
     CURRENT_PHRASE = new_phrase
-    with open(PHRASE_FILE, 'w') as f:
-        f.write(new_phrase)
+    try:
+        with open(PHRASE_FILE, 'w') as f:
+            f.write(new_phrase)
+    except:
+        pass
+    gh_put_bytes(PHRASE_FILE, new_phrase.encode())
 DEFAULT_MEET_LINK = "https://meet.google.com/abc-defg-hij"
 TEAMS_LINK = "https://teams.microsoft.com"
 OFFICE_LINK = "https://www.office.com"
@@ -104,6 +175,13 @@ FILES = {"reports":"data/reports.json","media":"data/media.json","candidates":"d
 BADGE_FILES = {"university":"data/badges/university_badge","unasnm":"data/badges/unasnm_badge"}
 BADGE_STORE = "data/badge_store.json"
 def load_json(p, d):
+    raw = gh_get_bytes(p)
+    if raw:
+        try:
+            dec = decrypt_bytes(raw)
+            return json.loads(dec.decode())
+        except:
+            pass
     if os.path.exists(p):
         try:
             with open(p, 'rb') as f:
@@ -117,8 +195,14 @@ def load_json(p, d):
     return d
 def save_json(p, data):
     raw = json.dumps(data, default=str, indent=2).encode()
-    with open(p, 'wb') as f:
-        f.write(encrypt_bytes(raw))
+    enc = encrypt_bytes(raw)
+    try:
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, 'wb') as f:
+            f.write(enc)
+    except:
+        pass
+    gh_put_bytes(p, enc)
 def save_badge(name, raw_bytes):
     try:
         write_encrypted_file(BADGE_FILES[name], raw_bytes)
@@ -344,7 +428,7 @@ a{color:#0B6B3A !important; font-weight:900 !important;}
 </style>
 """, unsafe_allow_html=True)
 def show_any_file(fp, fname):
-    if not fp or not os.path.exists(fp):
+    if not fp:
         return
     low = fp.lower()
     try:
@@ -362,8 +446,10 @@ def show_any_file(fp, fname):
     except:
         st.write(f"File: {fname}")
 def download_and_keep(fp, fname, key):
-    if fp and os.path.exists(fp):
+    try:
         st.download_button("DOWNLOAD TO PHONE", read_decrypted_file(fp), file_name=fname, key=key, type="primary", use_container_width=True)
+    except:
+        pass
 def retention_badge(item):
     if item.get("expires"):
         if is_expired(item):
@@ -434,7 +520,7 @@ if is_public:
                     st.write("Tick ONE person, then tap VOTE:")
                     for c in approved:
                         with st.container(border=True):
-                            if c.get('photo_path','') and os.path.exists(c.get('photo_path','')):
+                            if c.get('photo_path',''):
                                 st.image(read_decrypted_file(c.get('photo_path','')), width=140, caption=c['name'])
                             st.write(f"{c['name']} - {c.get('class','')}"); st.info(c.get('reason',''))
                     choice = st.radio("Choose one:", [f"{c['name']} - {c.get('class','')}" for c in approved], key=f"vote_choice_{vp}")
@@ -577,7 +663,7 @@ elif page.startswith("Secret"):
                 st.markdown(f"{m.get('from_name','')} | {m.get('date','')}")
                 if m.get('content'):
                     st.info(m.get('content'))
-                if m.get('file_path','') and os.path.exists(m.get('file_path','')):
+                if m.get('file_path',''):
                     show_any_file(m['file_path'], m.get('file_name',''))
                     download_and_keep(m['file_path'], m.get('file_name',''), key=f"dl_s4_{m['id']}_{idx}")
                 if st.button(f"Delete this message", key=f"del_s4_{m['id']}_{idx}"):
@@ -601,7 +687,7 @@ elif page.startswith("Secret"):
                 st.markdown(f"{d.get('title','')} | {d.get('by','')} | {retention_badge(d)}")
                 if d.get('description'):
                     st.write(d.get('description',''))
-                if d.get('file_path','') and os.path.exists(d.get('file_path','')):
+                if d.get('file_path',''):
                     show_any_file(d['file_path'], d.get('file_name',''))
                     download_and_keep(d['file_path'], d.get('file_name',''), key=f"dl_sec_{d['id']}_{idx}")
                 c1,c2 = st.columns(2)
@@ -672,7 +758,7 @@ elif page.startswith("Media"):
             with st.container(border=True):
                 st.write(f"{m['title']} - {m['by']}"); st.write(retention_badge(m))
                 fp = m.get('file_path','')
-                if fp and os.path.exists(fp):
+                if fp:
                     show_any_file(fp, m.get('file_name',''))
                     download_and_keep(fp, m.get('file_name',''), key=f"dl_med_{m['id']}_{idx}")
                 c1,c2 = st.columns(2)
@@ -683,11 +769,6 @@ elif page.startswith("Media"):
                     save_json(FILES["media"], med); st.rerun()
                 if c2.button("Delete", key=f"del_med_{m['id']}_{idx}"):
                     med = [x for x in med if x['id'] != m['id']]
-                    try:
-                        if fp and os.path.exists(fp):
-                            os.remove(fp)
-                    except:
-                        pass
                     save_json(FILES["media"], med); st.rerun()
 elif page.startswith("Documents"):
     st.subheader("Documents - Any File")
