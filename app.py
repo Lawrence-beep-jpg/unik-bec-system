@@ -7,6 +7,17 @@ except:
     Fernet = None
 st.set_page_config(page_title="UNIK BEC UNASNM Portal", page_icon="🏛️", layout="wide", initial_sidebar_state="collapsed")
 os.makedirs("data/media_files", exist_ok=True)
+# AUTO LOAD KEY FROM SECRETS SO ALL PHONES WORK
+if "gh_token" not in st.session_state:
+    try:
+        st.session_state.gh_token = st.secrets["GITHUB_TOKEN"]
+    except:
+        st.session_state.gh_token = ""
+if "gh_repo" not in st.session_state:
+    try:
+        st.session_state.gh_repo = st.secrets["GITHUB_REPO"]
+    except:
+        st.session_state.gh_repo = ""
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
 os.makedirs("data/badges", exist_ok=True)
