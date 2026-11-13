@@ -550,19 +550,12 @@ if is_public:
     st.stop()
 if not st.session_state.logged_in:
     show_header("Welcome, Family!")
-    st.markdown("### GITHUB KEY - TYPE HERE ONE TIME, ONLY SPEAKER")
-    st.write("Type your repo name and your key here. Do not type them in the code. Do not send them in chat.")
-    in_repo = st.text_input("Repo name - like your-name/unik-bec-system", value=st.session_state.gh_repo, key="in_repo")
-    in_key = st.text_input("Key - starts with ghp_", type="password", value=st.session_state.gh_token, key="in_key")
-    if st.button("SAVE GITHUB KEY", type="primary", use_container_width=True, key="save_gh"):
-        st.session_state.gh_repo = in_repo.strip()
-        st.session_state.gh_token = in_key.strip()
-        st.success("Saved! Now files will go to GitHub and will stay.")
-        st.rerun()
-    if gh_repo() and gh_token():
-        st.success("GitHub key is saved. Files will stay.")
-    else:
-        st.warning("No GitHub key yet. Files will not stay after Reboot until you save the key above.")
+       # SILENT - LOAD KEY FROM SECRETS. NO ONE SEES THE KEY.
+    try:
+        st.session_state.gh_repo = st.secrets["GITHUB_REPO"]
+        st.session_state.gh_token = st.secrets["GITHUB_TOKEN"]
+    except:
+        pass
     show_notifications_bar()
     enable_notify_button()
     st.markdown(f"<a href='{MEET_LINK}' target='_blank' style='background:#FFFFFF;color:#0B3D1E;padding:18px 25px;border-radius:25px;text-decoration:none;font-weight:900;font-size:22px;display:block;text-align:center;'>JOIN MEET NOW</a>", unsafe_allow_html=True)
