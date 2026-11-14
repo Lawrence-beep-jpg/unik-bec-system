@@ -21,7 +21,6 @@ if "gh_repo" not in st.session_state:
 os.makedirs("data/documents", exist_ok=True)
 os.makedirs("data/personal", exist_ok=True)
 os.makedirs("data/badges", exist_ok=True)
-# I CHANGED IT FOR YOU. NO LINES TO CHANGE HERE. NO TOKEN IN CODE. NO SECRETS.
 GITHUB_BRANCH = "main"
 if "gh_token" not in st.session_state:
     st.session_state.gh_token = ""
@@ -532,9 +531,18 @@ if is_public:
                     st.write("Tick ONE person, then tap VOTE:")
                     for c in approved:
                         with st.container(border=True):
-                            if c.get('photo_path',''):
-                                st.image(read_decrypted_file(c.get('photo_path','')), width=140, caption=c['name'])
-                            st.write(f"{c['name']} - {c.get('class','')}"); st.info(c.get('reason',''))
+                            c1,c2 = st.columns([1,3])
+                            with c1:
+                                if c.get('photo_path',''):
+                                    try:
+                                        st.image(read_decrypted_file(c.get('photo_path','')), use_container_width=True)
+                                    except:
+                                        st.write("No Photo")
+                            with c2:
+                                st.markdown(f"**Photo Name:** {c['name']}")
+                                st.markdown(f"**Post:** {USERS[vp]}")
+                                st.markdown(f"**Why vote for me:** {c.get('reason','')}")
+                                st.markdown(f"**Total Number of Votes:** {len([v for v in st.session_state.votes if v['candidate_id']==c['id']])}")
                     choice = st.radio("Choose one:", [f"{c['name']} - {c.get('class','')}" for c in approved], key=f"vote_choice_{vp}")
                     if st.button("VOTE", type="primary", use_container_width=True, key=f"vote_btn_{vp}"):
                         sel = approved[[f"{c['name']} - {c.get('class','')}" for c in approved].index(choice)]
@@ -545,12 +553,28 @@ if is_public:
     with t3:
         votes = load_json(FILES["votes"], st.session_state.votes); st.success(f"Total Votes: {len(votes)}")
         for pos in ELECTION_POS:
-            for cc in [c for c in st.session_state.candidates if c['position'] == pos]:
-                st.write(f"{cc['name']} - {USERS[pos]} - {len([v for v in votes if v['candidate_id']==cc['id']])} votes")
+            group = [c for c in st.session_state.candidates if c['position'] == pos]
+            if not group:
+                continue
+            st.markdown(f"### {USERS[pos].upper()} - {len(group)} Applicants")
+            for cc in group:
+                vcount = len([v for v in votes if v['candidate_id']==cc['id']])
+                c1,c2 = st.columns([1,3])
+                with c1:
+                    if cc.get('photo_path',''):
+                        try:
+                            st.image(read_decrypted_file(cc.get('photo_path','')), use_container_width=True)
+                        except:
+                            st.write("No Photo")
+                with c2:
+                    st.markdown(f"**Photo Name:** {cc['name']}")
+                    st.markdown(f"**Post:** {USERS[pos]}")
+                    st.markdown(f"**Why vote for me:** {cc.get('reason','')}")
+                    st.markdown(f"**Total Number of Votes:** {vcount}")
+                st.divider()
     st.stop()
 if not st.session_state.logged_in:
     show_header("Welcome, Family!")
-       # SILENT - LOAD KEY FROM SECRETS. NO ONE SEES THE KEY.
     try:
         st.session_state.gh_repo = st.secrets["GITHUB_REPO"]
         st.session_state.gh_token = st.secrets["GITHUB_TOKEN"]
@@ -719,9 +743,12 @@ elif page.startswith("Secret"):
 elif page.startswith("Notifications"):
     st.subheader("Notifications")
     notes = load_json(FILES["notif"], [])
-    if not isinstance(notes, list) or not notes:
-        st.info("No notification yet.")
-    for n in reversed(notes):
+    if not isinstance(notes, list):
+        notes = []
+    unseen = notes[st.session_state.seen_notif:]
+    if not unseen:
+        st.success("All seen! No new notifications. Check your departments for old ones.")
+    for n in reversed(unseen):
         with st.container(border=True):
             st.markdown(f"{n.get('title','')} | {n.get('date','')}")
             st.write(n.get('body',''))
@@ -899,14 +926,27 @@ elif page.startswith("Electoral"):
                     st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["pending"], st.session_state.pending); st.rerun()
             else:
                 st.write("Only Speaker can approve.")
-    st.markdown("### Approved - Can Be Voted")
+    st.markdown("### Approved - Can Be Voted - Grouped By Post")
     for pos in ELECTION_POS:
         group = [c for c in cand if c['position'] == pos]
         if not group:
             continue
-        st.markdown(f"**{USERS[pos]}**")
+        st.markdown(f"### {USERS[pos].upper()} - {len(group)} Applicants")
         for cc in group:
-            st.write(f"{cc['name']} - {cc.get('class','')} - {len([v for v in votes if v['candidate_id']==cc['id']])} votes")
+            vcount = len([v for v in votes if v['candidate_id']==cc['id']])
+            c1,c2 = st.columns([1,3])
+            with c1:
+                if cc.get('photo_path',''):
+                    try:
+                        st.image(read_decrypted_file(cc.get('photo_path','')), use_container_width=True)
+                    except:
+                        st.write("No Photo")
+            with c2:
+                st.markdown(f"**Photo Name:** {cc['name']} - {cc.get('class','')}")
+                st.markdown(f"**Post:** {USERS[pos]}")
+                st.markdown(f"**Why should we vote for them:** {cc.get('reason','')}")
+                st.markdown(f"**Total Number of Votes:** {vcount}")
+            st.divider()
 elif page.startswith("Disciplinary"):
     st.subheader("Disciplinary"); disc = load_json(FILES["disc"], st.session_state.disc)
     d_t = st.text_input("Title *", key="disc_t"); d_c = st.text_area("Details *", key="disc_c")
