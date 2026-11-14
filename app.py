@@ -7,7 +7,6 @@ except:
     Fernet = None
 st.set_page_config(page_title="UNIK BEC UNASNM Portal", page_icon="🏛️", layout="wide", initial_sidebar_state="collapsed")
 os.makedirs("data/media_files", exist_ok=True)
-# AUTO LOAD KEY FROM SECRETS SO ALL PHONES WORK
 if "gh_token" not in st.session_state:
     try:
         st.session_state.gh_token = st.secrets["GITHUB_TOKEN"]
@@ -539,15 +538,21 @@ if is_public:
                                     except:
                                         st.write("No Photo")
                             with c2:
-                                st.markdown(f"**Photo Name:** {c['name']}")
-                                st.markdown(f"**Post:** {USERS[vp]}")
-                                st.markdown(f"**Why vote for me:** {c.get('reason','')}")
-                                st.markdown(f"**Total Number of Votes:** {len([v for v in st.session_state.votes if v['candidate_id']==c['id']])}")
+                                st.markdown(f"<p><span style='color:#1565C0;font-weight:900;'>PHOTO NAME:</span> <span style='color:#000000;font-weight:800;'>{c['name']}</span></p>", unsafe_allow_html=True)
+                                st.markdown(f"<p><span style='color:#0B6B3A;font-weight:900;'>POST:</span> <span style='color:#000000;font-weight:800;'>{USERS[vp]}</span></p>", unsafe_allow_html=True)
+                                st.markdown(f"<p><span style='color:#7B1FA2;font-weight:900;'>WHY VOTE FOR ME:</span> <span style='color:#000000;'>{c.get('reason','')}</span></p>", unsafe_allow_html=True)
+                                st.markdown(f"<p style='background:#FFEBEE;padding:8px;border-radius:10px;'><span style='color:#B71C1C;font-weight:900;'>TOTAL NUMBER OF VOTES:</span> <span style='color:#B71C1C;font-weight:900;font-size:24px;'> {len([v for v in st.session_state.votes if v['candidate_id']==c['id']])} ⭐</span></p>", unsafe_allow_html=True)
                     choice = st.radio("Choose one:", [f"{c['name']} - {c.get('class','')}" for c in approved], key=f"vote_choice_{vp}")
                     if st.button("VOTE", type="primary", use_container_width=True, key=f"vote_btn_{vp}"):
                         sel = approved[[f"{c['name']} - {c.get('class','')}" for c in approved].index(choice)]
                         st.session_state.votes.append({"candidate_id":sel['id'],"voter_email":voter_email.lower(),"position":vp,"candidate_name":sel['name'],"date":str(dt.now())})
-                        save_json(FILES["votes"], st.session_state.votes); st.success(f"Voted {sel['name']}!"); st.balloons(); st.rerun()
+                        save_json(FILES["votes"], st.session_state.votes)
+                        add_notification("New Vote Cast", f"Someone voted for {sel['name']} for {USERS[vp]}.")
+                        st.balloons()
+                        st.success(f"🎉 Thank you for casting your vote! You voted for {sel['name']} for {USERS[vp]}.")
+                        st.markdown(f"<div style='background:#FFD700;padding:15px;border-radius:15px;text-align:center;'><h2 style='color:#0B3D1E !important;'>🎉 THANK YOU FOR CASTING YOUR VOTE! 🎉</h2><p style='font-size:20px;font-weight:900;'>You voted for {sel['name']} - {USERS[vp]}</p></div>", unsafe_allow_html=True)
+                        time.sleep(3)
+                        st.rerun()
         else:
             st.warning("Enter valid email to vote")
     with t3:
@@ -556,7 +561,7 @@ if is_public:
             group = [c for c in st.session_state.candidates if c['position'] == pos]
             if not group:
                 continue
-            st.markdown(f"### {USERS[pos].upper()} - {len(group)} Applicants")
+            st.markdown(f"<div style='background:#FFD700;padding:12px;border-radius:15px;text-align:center;'><h2 style='color:#0B3D1E !important;margin:0;'>🏆 {USERS[pos].upper()} - {len(group)} Applicants</h2></div>", unsafe_allow_html=True)
             for cc in group:
                 vcount = len([v for v in votes if v['candidate_id']==cc['id']])
                 c1,c2 = st.columns([1,3])
@@ -567,10 +572,10 @@ if is_public:
                         except:
                             st.write("No Photo")
                 with c2:
-                    st.markdown(f"**Photo Name:** {cc['name']}")
-                    st.markdown(f"**Post:** {USERS[pos]}")
-                    st.markdown(f"**Why vote for me:** {cc.get('reason','')}")
-                    st.markdown(f"**Total Number of Votes:** {vcount}")
+                    st.markdown(f"<p><span style='color:#1565C0;font-weight:900;'>PHOTO NAME:</span> <span style='color:#000000;font-weight:800;'>{cc['name']}</span></p>", unsafe_allow_html=True)
+                    st.markdown(f"<p><span style='color:#0B6B3A;font-weight:900;'>POST:</span> <span style='color:#000000;font-weight:800;'>{USERS[pos]}</span></p>", unsafe_allow_html=True)
+                    st.markdown(f"<p><span style='color:#7B1FA2;font-weight:900;'>WHY VOTE FOR ME:</span> <span style='color:#000000;'>{cc.get('reason','')}</span></p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='background:#FFEBEE;padding:8px;border-radius:10px;'><span style='color:#B71C1C;font-weight:900;'>TOTAL NUMBER OF VOTES:</span> <span style='color:#B71C1C;font-weight:900;font-size:24px;'> {vcount} ⭐</span></p>", unsafe_allow_html=True)
                 st.divider()
     st.stop()
 if not st.session_state.logged_in:
@@ -931,7 +936,7 @@ elif page.startswith("Electoral"):
         group = [c for c in cand if c['position'] == pos]
         if not group:
             continue
-        st.markdown(f"### {USERS[pos].upper()} - {len(group)} Applicants")
+        st.markdown(f"<div style='background:#FFD700;padding:12px;border-radius:15px;text-align:center;'><h2 style='color:#0B3D1E !important;margin:0;'>🏆 {USERS[pos].upper()} - {len(group)} Applicants</h2></div>", unsafe_allow_html=True)
         for cc in group:
             vcount = len([v for v in votes if v['candidate_id']==cc['id']])
             c1,c2 = st.columns([1,3])
@@ -942,10 +947,10 @@ elif page.startswith("Electoral"):
                     except:
                         st.write("No Photo")
             with c2:
-                st.markdown(f"**Photo Name:** {cc['name']} - {cc.get('class','')}")
-                st.markdown(f"**Post:** {USERS[pos]}")
-                st.markdown(f"**Why should we vote for them:** {cc.get('reason','')}")
-                st.markdown(f"**Total Number of Votes:** {vcount}")
+                st.markdown(f"<p><span style='color:#1565C0;font-weight:900;'>PHOTO NAME:</span> <span style='color:#000000;font-weight:800;'>{cc['name']} - {cc.get('class','')}</span></p>", unsafe_allow_html=True)
+                st.markdown(f"<p><span style='color:#0B6B3A;font-weight:900;'>POST:</span> <span style='color:#000000;font-weight:800;'>{USERS[pos]}</span></p>", unsafe_allow_html=True)
+                st.markdown(f"<p><span style='color:#7B1FA2;font-weight:900;'>WHY SHOULD WE VOTE FOR THEM:</span> <span style='color:#000000;'>{cc.get('reason','')}</span></p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='background:#FFEBEE;padding:8px;border-radius:10px;'><span style='color:#B71C1C;font-weight:900;'>TOTAL NUMBER OF VOTES:</span> <span style='color:#B71C1C;font-weight:900;font-size:24px;'> {vcount} ⭐</span></p>", unsafe_allow_html=True)
             st.divider()
 elif page.startswith("Disciplinary"):
     st.subheader("Disciplinary"); disc = load_json(FILES["disc"], st.session_state.disc)
