@@ -929,6 +929,9 @@ elif page.startswith("Electoral"):
                     st.session_state.candidates.append(pc); st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["candidates"], st.session_state.candidates); save_json(FILES["pending"], st.session_state.pending); add_notification("Candidate approved", f"{pc['name']} can now be voted."); st.success("Approved!"); st.rerun()
                 if st.button(f"REJECT {pc['name']}", key=f"rj_{pc['id']}"):
                     st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["pending"], st.session_state.pending); st.rerun()
+                # === ONLY ADDED: SPEAKER SECRET DELETE - WAITING - NO ONE ELSE SEES THIS ===
+                if st.button(f"DELETE SECRETLY - {pc['name']}", key=f"del_pend_speaker_{pc['id']}"):
+                    st.session_state.pending = [x for x in st.session_state.pending if x['id'] != pc['id']]; save_json(FILES["pending"], st.session_state.pending); st.session_state.pending = load_json(FILES["pending"], []); st.rerun()
             else:
                 st.write("Only Speaker can approve.")
     st.markdown("### Approved - Can Be Voted - Grouped By Post")
@@ -951,6 +954,12 @@ elif page.startswith("Electoral"):
                 st.markdown(f"<p><span style='color:#0B6B3A;font-weight:900;'>POST:</span> <span style='color:#000000;font-weight:800;'>{USERS[pos]}</span></p>", unsafe_allow_html=True)
                 st.markdown(f"<p><span style='color:#7B1FA2;font-weight:900;'>WHY SHOULD WE VOTE FOR THEM:</span> <span style='color:#000000;'>{cc.get('reason','')}</span></p>", unsafe_allow_html=True)
                 st.markdown(f"<p style='background:#FFEBEE;padding:8px;border-radius:10px;'><span style='color:#B71C1C;font-weight:900;'>TOTAL NUMBER OF VOTES:</span> <span style='color:#B71C1C;font-weight:900;font-size:24px;'> {vcount} ⭐</span></p>", unsafe_allow_html=True)
+                # === ONLY ADDED: SPEAKER SECRET DELETE - APPROVED - NO ONE ELSE SEES THIS ===
+                if is_speaker:
+                    if st.button(f"DELETE SECRETLY - {cc['name']}", key=f"del_cand_speaker_{cc['id']}"):
+                        st.session_state.candidates = [x for x in st.session_state.candidates if x['id'] != cc['id']]; save_json(FILES["candidates"], st.session_state.candidates)
+                        st.session_state.votes = [v for v in st.session_state.votes if v['candidate_id'] != cc['id']]; save_json(FILES["votes"], st.session_state.votes)
+                        st.rerun()
             st.divider()
 elif page.startswith("Disciplinary"):
     st.subheader("Disciplinary"); disc = load_json(FILES["disc"], st.session_state.disc)
